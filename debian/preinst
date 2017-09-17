@@ -1,0 +1,14 @@
+#!/bin/sh
+
+case "$1" in
+    install)
+        ;;
+
+    upgrade|abort-upgrade)
+    	service homegear-gateway stop
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0

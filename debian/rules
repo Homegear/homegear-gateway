@@ -1,0 +1,31 @@
+#!/usr/bin/make -f
+
+override_dh_auto_configure:
+	dh_auto_configure -- --with-curl
+
+override_dh_auto_install:
+	dh_auto_install
+
+	mkdir -p $(CURDIR)/debian/homegear-gateway/etc/homegear
+	cp -R $(CURDIR)/misc/Config\ Directory/gateway.conf $(CURDIR)/debian/homegear-gateway/etc/homegear
+	chmod 644 $(CURDIR)/debian/homegear-gateway/etc/homegear/gateway.conf
+
+	mkdir -p $(CURDIR)/debian/homegear-gateway/etc/init.d
+	cp $(CURDIR)/misc/System\ Config/homegear-gateway.init $(CURDIR)/debian/homegear-gateway/etc/init.d/homegear-gateway
+	chown root:root $(CURDIR)/debian/homegear-gateway/etc/init.d/homegear-gateway
+	chmod 755 $(CURDIR)/debian/homegear-gateway/etc/init.d/homegear-gateway
+	mkdir -p $(CURDIR)/debian/homegear-gateway/lib/systemd/system
+	cp $(CURDIR)/misc/System\ Config/homegear-gateway.service $(CURDIR)/debian/homegear-gateway/lib/systemd/system/
+	chown root:root $(CURDIR)/debian/homegear-gateway/lib/systemd/system/homegear-gateway.service
+	chmod 644 $(CURDIR)/debian/homegear-gateway/lib/systemd/system/homegear-gateway.service
+
+	mkdir -p $(CURDIR)/debian/homegear-gateway/etc/logrotate.d
+	cp $(CURDIR)/misc/System\ Config/logrotate $(CURDIR)/debian/homegear-gateway/etc/logrotate.d/homegear-gateway
+	chown root:root $(CURDIR)/debian/homegear-gateway/etc/logrotate.d/homegear-gateway
+	chmod 644 $(CURDIR)/debian/homegear-gateway/etc/logrotate.d/homegear-gateway
+
+override_dh_strip:
+	dh_strip --dbg-package=homegear-gateway
+
+%:
+	dh $@ --parallel

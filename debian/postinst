@@ -1,0 +1,63 @@
+#!/bin/bash
+
+case $1 in
+	# Configure this package. If the package must prompt the user for
+	# information, do it here.
+	configure)
+		result=`id -u homegear 2>/dev/null`
+		if [ "0$result" -eq "0" ]; then
+			adduser --system --no-create-home --shell /bin/false --group homegear >/dev/null 2>&1
+			[ $? -ne 0 ] && exit 1
+			usermod -a -G dialout homegear 2>/dev/null
+			usermod -a -G gpio homegear 2>/dev/null
+			usermod -a -G spi homegear 2>/dev/null
+		fi
+
+		mkdir -p /var/log/homegear-gateway
+		chown homegear:homegear /var/log/homegear-gateway
+		chmod 750 /var/log/homegear-gateway
+
+		pidof systemd
+		if [ $? -eq 0 ]; then
+			systemctl enable homegear-gateway.service
+		else
+			result=`ps -A | grep -c ' systemd$'`
+			command -v systemctl > /dev/null 2>&1
+			if [ $? -ne 0 ] || [ $result -eq 0 ]; then
+				if test -f /usr/lib/insserv/insserv; then
+					/usr/lib/insserv/insserv homegear-gateway
+				else
+					insserv homegear-gateway
+				fi
+			else
+				systemctl enable homegear-gateway.service
+			fi
+		fi
+		;;
+
+	# Back out of an attempt to upgrade this package FROM THIS VERSION
+	# to version $2. Undo the effects of "prerm upgrade $2".
+	abort-upgrade)
+		;;
+
+	# Back out of an attempt to remove this package, which was due to
+	# a conflict with package $3 (version $4). Undo the effects of
+	# "prerm remove in-favour $3 $4".
+	abort-remove)
+		;;
+
+	# Back out of an attempt to deconfigure this package, which was
+	# due to package $6 (version $7) which we depend on being removed
+	# to make way for package $3 (version $4). Undo the effects of
+	# "prerm deconfigure in-favour $3 $4 removing $6 $7".
+	abort-deconfigure)
+		;;
+
+	*)
+		echo "$0: didn't understand being called with \`$1'" 1>&2
+		exit 1;
+		;;
+
+esac
+
+#DEBHELPER#

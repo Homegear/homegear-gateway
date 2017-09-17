@@ -1,0 +1,148 @@
+#!/bin/bash
+
+### BEGIN INIT INFO
+# Provides:		homegear-gateway
+# Required-Start:	$network $remote_fs $syslog ntp
+# Required-Stop:	$network $remote_fs $syslog ntp
+# Default-Start:	2 3 4 5
+# Default-Stop:		0 1 6
+# Short-Description:	Start Homegear-Gateway
+### END INIT INFO
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+. /lib/lsb/init-functions
+
+CONFIGPATH=/etc/homegear
+DAEMON=/usr/bin/homegear-gateway
+PIDPATH=/var/run/homegear
+PIDFILE=$PIDPATH/homegear-gateway.pid
+LOGPATH=/var/log/homegear-gateway
+
+test -x $DAEMON || exit 5
+
+if [ -r /etc/default/homegear-gateway ]; then
+        . /etc/default/homegear-gateway
+fi
+
+HOMEGEAR_GATEWAY_OPTS="$HOMEGEAR_GATEWAY_OPTS -d"
+
+LOCKFILE=/var/lock/homegear-gateway
+
+lock_homegear() {
+        if [ -x /usr/bin/lockfile-create ]; then
+                lockfile-create $LOCKFILE
+                lockfile-touch $LOCKFILE &
+                LOCKTOUCHPID="$!"
+        fi
+}
+
+unlock_homegear() {
+        if [ -x /usr/bin/lockfile-create ] ; then
+                kill $LOCKTOUCHPID
+                lockfile-remove $LOCKFILE
+        fi
+}
+
+RUNASUSER=homegear
+RUNASGROUP=homegear
+
+case $1 in
+        start)
+				if test ! -d $PIDPATH; then
+					mkdir -p $PIDPATH
+				fi
+				chown -R $RUNASUSER:$RUNASGROUP $PIDPATH
+				chmod -R 750 $PIDPATH
+
+				if test ! -d $LOGPATH; then
+					mkdir -p $LOGPATH
+				fi
+				chown -R $RUNASUSER:$RUNASGROUP $LOGPATH
+				chmod -R 750 $LOGPATH
+
+                log_daemon_msg "Starting Homegear-Gateway" "homegear-gateway"
+                lock_homegear
+                #Probably has no effect at all...
+                ulimit -r 100
+                start-stop-daemon --start --quiet --oknodo --pidfile $PIDFILE --startas $DAEMON -- -p $PIDFILE -u $RUNASUSER -g $RUNASGROUP $HOMEGEAR_GATEWAY_OPTS
+                status=$?
+                unlock_homegear
+
+                log_end_msg $status
+                ;;
+        stop)
+                log_daemon_msg "Stopping Homegear-Gateway" "homegear-gateway"
+                if test -e $PIDFILE; then
+                	PID=`cat $PIDFILE`
+                	PROCESSCOUNT=`ps --pid $PID | grep -c homegear-gateway`
+                	if [ $PROCESSCOUNT -ne 0 ]; then
+                		start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE
+                	fi
+                	INDEX=0
+                	while [ $PROCESSCOUNT -ne 0 ] && [ $INDEX -lt 5000 ]; do
+                		sleep 0.01
+                		PROCESSCOUNT=`ps --pid $PID | grep -c homegear-gateway`
+                		if log_use_fancy_output; then
+					        LOGLINE=`tail -n 20 $LOGPATH/homegear-gateway.log | grep -o ".[sS]hutdown. => .*$" | tail -n 1`
+					        MESSAGE=`printf "%-70s" "${LOGLINE:14}"`
+					        if [ ! -z "$LOGLINE" ]; then
+				                $TPUT civis || true
+				                $TPUT sc && \
+				                $TPUT hpa 36 && \
+				                CYAN=$( $TPUT setaf 6)
+				                NORMAL=$( $TPUT op)
+				                echo -ne "(${CYAN} $MESSAGE ${NORMAL})" || true
+				                $TPUT rc || true
+				                $TPUT cnorm || true
+					        fi
+						fi
+                		INDEX=$((INDEX+1))
+                	done
+                	if log_use_fancy_output; then
+		                $TPUT civis || true
+		                $TPUT sc && \
+		                $TPUT hpa 36 && \
+		                CYAN=$( $TPUT setaf 6)
+		                NORMAL=$( $TPUT op)
+		                echo -ne "                                                                          " || true
+		                $TPUT rc || true
+		                $TPUT cnorm || true
+					fi
+                	if [ $PROCESSCOUNT -ne 0 ]; then
+               			log_end_msg 1
+               		else
+               			log_end_msg 0
+               		fi
+                	rm -f $PIDFILE
+                else
+                	log_end_msg 1
+                	echo "Can't stop homegear-gateway. There is no pid file."
+                fi
+                ;;
+        restart|force-reload)
+                $0 stop && sleep 2 && $0 start
+                ;;
+        try-restart)
+                if $0 status >/dev/null; then
+                        $0 restart
+                else
+                        exit 0
+                fi
+                ;;
+        reload)
+                log_daemon_msg "Reloading Homegear-Gateway" "homegear-gateway"
+                if start-stop-daemon --stop --signal 1 --quiet --oknodo --pidfile $PIDFILE; then
+		            log_end_msg 0 || true
+		        else
+		            log_end_msg 1 || true
+		        fi
+                ;;
+        status)
+                status_of_proc $DAEMON "homegear-gateway"
+                ;;
+        *)
+                echo "Usage: $0 {start|stop|restart|reload|force-reload|status}"
+                exit 2
+                ;;
+esac

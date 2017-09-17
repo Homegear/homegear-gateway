@@ -1,0 +1,17 @@
+[Unit]
+Description=Homegear Gateway
+After=homegear
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=simple
+PIDFile=/var/run/homegear/homegear-gateway.pid
+TimeoutSec=300
+LimitRTPRIO=100
+ExecStart=/usr/bin/homegear-gateway -u homegear -g homegear -p /var/run/homegear/homegear-gateway.pid
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+TasksMax=infinity
+LimitCORE=infinity
