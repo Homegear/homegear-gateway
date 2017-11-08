@@ -4,16 +4,16 @@
  * it under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- *
+ * 
  * Homegear is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU Lesser General Public
  * License along with Homegear.  If not, see
  * <http://www.gnu.org/licenses/>.
- *
+ * 
  * In addition, as a special exception, the copyright holders give
  * permission to link the code of portions of this program with the
  * OpenSSL library under certain conditions as described in each
@@ -28,18 +28,49 @@
  * files in the program, then also delete it here.
 */
 
-#include "GD.h"
+#ifndef UPNP_H_
+#define UPNP_H_
 
-std::unique_ptr<BaseLib::SharedObjects> GD::bl;
-BaseLib::Output GD::out;
-std::string GD::runAsUser = "";
-std::string GD::runAsGroup = "";
-std::string GD::configPath = "/etc/homegear/";
-std::string GD::pidfilePath = "";
-std::string GD::workingDirectory = "";
-std::string GD::executablePath = "";
-std::string GD::executableFile = "";
-int64_t GD::startingTime = BaseLib::HelperFunctions::getTime();
-Settings GD::settings;
-std::unique_ptr<RpcServer> GD::rpcServer;
-std::unique_ptr<UPnP> GD::upnp;
+#include <homegear-base/BaseLib.h>
+
+class UPnP : public BaseLib::Rpc::IWebserverEventSink
+{
+public:
+	UPnP();
+	virtual ~UPnP();
+
+	void start();
+	void stop();
+private:
+	struct Packets
+	{
+		std::vector<char> notifyRoot;
+		std::vector<char> notifyRootUUID;
+		std::vector<char> notify;
+		std::vector<char> okRoot;
+		std::vector<char> okRootUUID;
+		std::vector<char> ok;
+		std::vector<char> byebyeRoot;
+		std::vector<char> byebyeRootUUID;
+		std::vector<char> byebye;
+	};
+
+	std::atomic_bool _stopServer;
+	std::shared_ptr<BaseLib::FileDescriptor> _serverSocketDescriptor;
+	std::thread _listenThread;
+	std::string _address;
+	std::string _st;
+	Packets _packets;
+	int32_t _lastAdvertisement = 0;
+
+	void getAddress();
+	void getSocketDescriptor();
+	void listen();
+	void processPacket(BaseLib::Http& http);
+	void sendOK(std::string destinationIpAddress, int32_t destinationPort, bool rootDeviceOnly);
+	void sendNotify();
+	void sendByebye();
+	void setPackets();
+};
+
+#endif

@@ -79,6 +79,11 @@ void terminate(int signalNumber)
 			GD::bl->shuttingDown = true;
 			_shuttingDownMutex.unlock();
 			_disposing = true;
+			if(GD::upnp)
+			{
+				GD::out.printInfo("Stopping UPnP server...");
+				GD::upnp->stop();
+			}
 			GD::rpcServer->stop();
 			GD::rpcServer.reset();
 			GD::out.printMessage("(Shutdown) => Shutdown complete.");
@@ -447,6 +452,13 @@ void startUp()
         }
 
         GD::out.printMessage("Startup complete.");
+
+		if(GD::bl->settings.enableUPnP())
+		{
+			GD::out.printInfo("Starting UPnP server...");
+			GD::upnp = std::unique_ptr<UPnP>(new UPnP());
+			GD::upnp->start();
+		}
 
         GD::bl->booting = false;
 

@@ -51,6 +51,13 @@ void Settings::reset()
 	_certPath = "";
 	_keyPath = "";
 	_dhPath = "";
+
+    _enableUpnp = true;
+    _upnpIpAddress = "";
+    _upnpUdn = "";
+
+    _family = "";
+    _device = "";
 }
 
 bool Settings::changed()
@@ -185,6 +192,21 @@ void Settings::load(std::string filename, std::string executablePath)
 					_dhPath = value;
 					GD::bl->out.printDebug("Debug: dhPath set to " + _dhPath);
 				}
+                else if(name == "enableupnp")
+                {
+                    _enableUpnp = BaseLib::HelperFunctions::toLower(value) == "true";
+                    GD::out.printDebug("Debug: enableUPnP set to " + std::to_string(_enableUpnp));
+                }
+                else if(name == "upnpipaddress")
+                {
+                    _upnpIpAddress = value;
+                    GD::out.printDebug("Debug: uPnPIpAddress set to " + _upnpIpAddress);
+                }
+                else if(name == "upnpudn")
+                {
+                    _upnpUdn = value;
+                    GD::out.printDebug("Debug: uPnPUDN set to " + _upnpUdn);
+                }
                 else if(name == "family")
                 {
                     _family = BaseLib::HelperFunctions::toLower(value);
