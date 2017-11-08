@@ -28,43 +28,34 @@
  * files in the program, then also delete it here.
 */
 
-#ifndef RPCSERVER_H_
-#define RPCSERVER_H_
+#ifndef GD_H_
+#define GD_H_
+
+#include "Settings.h"
 
 #include <homegear-base/BaseLib.h>
-#include "Families/ICommunicationInterface.h"
+#include "RpcServer.h"
 
-class RpcServer
+class GD
 {
 public:
-	RpcServer(BaseLib::SharedObjects* bl);
-	virtual ~RpcServer();
+	static std::unique_ptr<BaseLib::SharedObjects> bl;
+	static BaseLib::Output out;
+	static std::string runAsUser;
+	static std::string runAsGroup;
+	static std::string configPath;
+	static std::string pidfilePath;
+	static std::string workingDirectory;
+	static std::string executablePath;
+	static std::string executableFile;
+	static int64_t startingTime;
+	static Settings settings;
+    static std::unique_ptr<RpcServer> rpcServer;
 
-	bool start();
-	void stop();
-    BaseLib::PVariable invoke(std::string methodName, BaseLib::PArray& parameters);
+	virtual ~GD() = default;
 private:
-	BaseLib::SharedObjects* _bl = nullptr;
-
-	std::shared_ptr<BaseLib::TcpSocket> _tcpServer;
-	std::unique_ptr<BaseLib::Rpc::BinaryRpc> _binaryRpc;
-    std::unique_ptr<BaseLib::Rpc::RpcEncoder> _rpcEncoder;
-    std::unique_ptr<BaseLib::Rpc::RpcDecoder> _rpcDecoder;
-
-	std::atomic_bool _stopped;
-    std::atomic_bool _clientConnected;
-    int32_t _clientId = 0;
-
-    std::mutex _invokeMutex;
-    std::mutex _requestMutex;
-    std::atomic_bool _waitForResponse;
-    std::condition_variable _requestConditionVariable;
-    BaseLib::PVariable _rpcResponse;
-
-    std::unique_ptr<ICommunicationInterface> _interface;
-
-	void newConnection(int32_t clientId, std::string address, uint16_t port);
-	void packetReceived(int32_t clientId, BaseLib::TcpSocket::TcpPacket packet);
+	//Non public constructor
+	GD();
 };
 
-#endif
+#endif /* GD_H_ */

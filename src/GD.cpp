@@ -40,6 +40,5 @@ std::string GD::workingDirectory = "";
 std::string GD::executablePath = "";
 std::string GD::executableFile = "";
 int64_t GD::startingTime = BaseLib::HelperFunctions::getTime();
-std::unique_ptr<IpcClient> GD::ipcClient;
-std::unique_ptr<Database> GD::db;
 Settings GD::settings;
+std::unique_ptr<RpcServer> GD::rpcServer;

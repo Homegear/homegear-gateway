@@ -28,36 +28,25 @@
  * files in the program, then also delete it here.
 */
 
-#ifndef GD_H_
-#define GD_H_
+#include "ICommunicationInterface.h"
+#include "../GD.h"
 
-#include "../Settings.h"
-#include "../Database.h"
-
-#include <homegear-base/BaseLib.h>
-#include "../RpcServer.h"
-
-class GD
+ICommunicationInterface::ICommunicationInterface(BaseLib::SharedObjects* bl)
 {
-public:
-	static std::unique_ptr<BaseLib::SharedObjects> bl;
-	static BaseLib::Output out;
-	static std::string runAsUser;
-	static std::string runAsGroup;
-	static std::string configPath;
-	static std::string pidfilePath;
-	static std::string workingDirectory;
-	static std::string executablePath;
-	static std::string executableFile;
-	static int64_t startingTime;
-	static std::unique_ptr<IpcClient> ipcClient;
-	static std::unique_ptr<Database> db;
-	static Settings settings;
-
-	virtual ~GD() {}
-private:
-	//Non public constructor
-	GD();
-};
-
-#endif /* GD_H_ */
+    try
+    {
+        _bl = bl;
+    }
+    catch(BaseLib::Exception& ex)
+    {
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+    }
+    catch(const std::exception& ex)
+    {
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+    }
+    catch(...)
+    {
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
+    }
+}

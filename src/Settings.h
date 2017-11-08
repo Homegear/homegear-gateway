@@ -28,8 +28,8 @@
  * files in the program, then also delete it here.
 */
 
-#ifndef HISTORYSETTINGS_H_
-#define HISTORYSETTINGS_H_
+#ifndef GATEWAYSETTINGS_H_
+#define GATEWAYSETTINGS_H_
 
 #include <homegear-base/BaseLib.h>
 
@@ -55,13 +55,16 @@ public:
 	std::string certPath() { return _certPath; }
 	std::string keyPath() { return _keyPath; }
 	std::string dhPath() { return _dhPath; }
+
+    std::string family() { return _family; }
+    std::string device() { return _device; }
 private:
 	std::string _executablePath;
 	std::string _path;
 	int32_t _lastModified = -1;
 
 	std::string _listenAddress;
-	int32_t _port = 2003;
+	int32_t _port = 2017;
 	std::string _runAsUser;
 	std::string _runAsGroup;
 	int32_t _debugLevel = 3;
@@ -74,6 +77,9 @@ private:
 	std::string _certPath;
 	std::string _keyPath;
 	std::string _dhPath;
+
+	std::string _family;
+    std::string _device;
 
 	void reset();
 };

@@ -1,1 +1,1 @@
-# Homegear-InfluxDB
+# Homegear Gateway

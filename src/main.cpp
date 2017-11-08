@@ -28,7 +28,7 @@
  * files in the program, then also delete it here.
 */
 
-#include "GD/GD.h"
+#include "GD.h"
 
 #include <malloc.h>
 #include <sys/prctl.h> //For function prctl
@@ -47,7 +47,6 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 
 bool _startAsDaemon = false;
 std::mutex _shuttingDownMutex;
-std::atomic_bool _reloading;
 std::atomic_bool _startUpComplete;
 std::atomic_bool _shutdownQueued;
 bool _disposing = false;
@@ -76,13 +75,12 @@ void terminate(int signalNumber)
 				_shuttingDownMutex.unlock();
 				return;
 			}
-			GD::out.printMessage("(Shutdown) => Stopping Homegear InfluxDB (Signal: " + std::to_string(signalNumber) + ")");
+			GD::out.printMessage("(Shutdown) => Stopping Homegear Gateway (Signal: " + std::to_string(signalNumber) + ")");
 			GD::bl->shuttingDown = true;
 			_shuttingDownMutex.unlock();
 			_disposing = true;
-			GD::ipcClient->stop();
-			GD::ipcClient.reset();
-			GD::db.reset();
+			GD::rpcServer->stop();
+			GD::rpcServer.reset();
 			GD::out.printMessage("(Shutdown) => Shutdown complete.");
 			fclose(stdout);
 			fclose(stderr);
@@ -105,11 +103,11 @@ void terminate(int signalNumber)
 			}
 			_startUpComplete = false;
 			_shuttingDownMutex.unlock();
-			if(!std::freopen((GD::settings.logfilePath() + "homegear-influxdb.log").c_str(), "a", stdout))
+			if(!std::freopen((GD::settings.logfilePath() + "homegear-gateway.log").c_str(), "a", stdout))
 			{
 				GD::out.printError("Error: Could not redirect output to new log file.");
 			}
-			if(!std::freopen((GD::settings.logfilePath() + "homegear-influxdb.err").c_str(), "a", stderr))
+			if(!std::freopen((GD::settings.logfilePath() + "homegear-gateway.err").c_str(), "a", stderr))
 			{
 				GD::out.printError("Error: Could not redirect errors to new log file.");
 			}
@@ -125,7 +123,7 @@ void terminate(int signalNumber)
 		}
 		else
 		{
-			if (!_disposing) GD::out.printCritical("Critical: Signal " + std::to_string(signalNumber) + " received. Stopping Homegear InfluxDB...");
+			if (!_disposing) GD::out.printCritical("Critical: Signal " + std::to_string(signalNumber) + " received. Stopping Homegear Gateway...");
 			signal(signalNumber, SIG_DFL); //Reset signal handler for the current signal to default
 			kill(getpid(), signalNumber); //Generate core dump
 		}
@@ -317,37 +315,20 @@ void startUp()
     	sigaction(SIGSEGV, &sa, NULL);
 		sigaction(SIGINT, &sa, NULL);
 
-		if(!std::freopen((GD::settings.logfilePath() + "homegear-influxdb.log").c_str(), "a", stdout))
+		if(!std::freopen((GD::settings.logfilePath() + "homegear-gateway.log").c_str(), "a", stdout))
 		{
 			GD::out.printError("Error: Could not redirect output to log file.");
 		}
-		if(!std::freopen((GD::settings.logfilePath() + "homegear-influxdb.err").c_str(), "a", stderr))
+		if(!std::freopen((GD::settings.logfilePath() + "homegear-gateway.err").c_str(), "a", stderr))
 		{
 			GD::out.printError("Error: Could not redirect errors to log file.");
 		}
 
-    	GD::out.printMessage("Starting Homegear InfluxDB...");
+    	GD::out.printMessage("Starting Homegear Gateway...");
 
     	if(GD::settings.memoryDebugging()) mallopt(M_CHECK_ACTION, 3); //Print detailed error message, stack trace, and memory, and abort the program. See: http://man7.org/linux/man-pages/man3/mallopt.3.html
 
     	initGnuTls();
-
-		if(!GD::bl->io.directoryExists(GD::settings.socketPath()))
-		{
-			if(!GD::bl->io.createDirectory(GD::settings.socketPath(), S_IRWXU | S_IRWXG))
-			{
-				GD::out.printCritical("Critical: Directory \"" + GD::settings.socketPath() + "\" does not exist and cannot be created.");
-				exit(1);
-			}
-			if(GD::bl->userId != 0 || GD::bl->groupId != 0)
-			{
-				if(chown(GD::settings.socketPath().c_str(), GD::bl->userId, GD::bl->groupId) == -1)
-				{
-					GD::out.printCritical("Critical: Could not set permissions on directory \"" + GD::settings.socketPath() + "\"");
-					exit(1);
-				}
-			}
-		}
 
 		setLimits();
 
@@ -409,7 +390,7 @@ void startUp()
 				GD::out.printCritical("Critical: Regaining root privileges succeded. Exiting Homegear as this is a security risk.");
 				exit(1);
 			}
-    		GD::out.printInfo("Info: Homegear is (now) running as user with id " + std::to_string(getuid()) + " and group with id " + std::to_string(getgid()) + '.');
+    		GD::out.printInfo("Info: Homegear Gateway is (now) running as user with id " + std::to_string(getuid()) + " and group with id " + std::to_string(getgid()) + '.');
     	}
 
     	//Create PID file
@@ -427,7 +408,7 @@ void startUp()
 					int32_t rc = flock(pidfile, LOCK_EX | LOCK_NB);
 					if(rc && errno == EWOULDBLOCK)
 					{
-						GD::out.printError("Error: Homegear is already running - Can't lock PID file.");
+						GD::out.printError("Error: Homegear Gateway is already running - Can't lock PID file.");
 					}
 					std::string pid(std::to_string(getpid()));
 					int32_t bytesWritten = write(pidfile, pid.c_str(), pid.size());
@@ -455,16 +436,15 @@ void startUp()
 			std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 		}
 
-		GD::db.reset(new Database(GD::bl.get()));
-		while(!_shutdownQueued)
-		{
-			if(GD::db->open()) break;
-			GD::out.printWarning("Warning: Could not connect to InfluxdB. Please make sure it is running and your settings are correct.");
-			std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-		}
-
-		GD::ipcClient.reset(new IpcClient(GD::settings.socketPath() + "homegearIPC.sock"));
-		if(!_shutdownQueued) GD::ipcClient->start();
+		GD::rpcServer.reset(new RpcServer(GD::bl.get()));
+		if(!_shutdownQueued)
+        {
+            if(!GD::rpcServer->start())
+            {
+                GD::out.printCritical("Critical: Could not start.");
+                _shutdownQueued = true;
+            }
+        }
 
         GD::out.printMessage("Startup complete.");
 
@@ -481,12 +461,10 @@ void startUp()
 
 		if(BaseLib::Io::fileExists(GD::settings.workingDirectory() + "core"))
 		{
-			GD::out.printError("Error: A core file exists in Homegear InfluxDB's working directory (\"" + GD::settings.workingDirectory() + "core" + "\"). Please send this file to the Homegear team including information about your system (Linux distribution, CPU architecture), the Homegear InfluxDB version, the current log files and information what might've caused the error.");
+			GD::out.printError("Error: A core file exists in Homegear Gateway's working directory (\"" + GD::settings.workingDirectory() + "core" + "\"). Please send this file to the Homegear team including information about your system (Linux distribution, CPU architecture), the Homegear Gateway version, the current log files and information what might've caused the error.");
 		}
 
        	while(true) std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-        terminate(SIGTERM);
 	}
 	catch(const std::exception& ex)
     {
@@ -506,7 +484,6 @@ int main(int argc, char* argv[])
 {
 	try
     {
-		_reloading = false;
 		_startUpComplete = false;
 		_shutdownQueued = false;
 
@@ -592,7 +569,7 @@ int main(int argc, char* argv[])
     		}
     		else if(arg == "-v")
     		{
-    			std::cout << "Homegear InfluxDB version " << VERSION << std::endl;
+    			std::cout << "Homegear Gateway version " << VERSION << std::endl;
     			std::cout << "Copyright (c) 2013-2017 Sathya Laufer" << std::endl << std::endl;
     			exit(0);
     		}
@@ -604,13 +581,13 @@ int main(int argc, char* argv[])
     	}
 
     	// {{{ Load settings
-			GD::out.printInfo("Loading settings from " + GD::configPath + "influxdb.conf");
-			GD::settings.load(GD::configPath + "influxdb.conf", GD::executablePath);
+			GD::out.printInfo("Loading settings from " + GD::configPath + "gateway.conf");
+			GD::settings.load(GD::configPath + "gateway.conf", GD::executablePath);
 			if(GD::runAsUser.empty()) GD::runAsUser = GD::settings.runAsUser();
 			if(GD::runAsGroup.empty()) GD::runAsGroup = GD::settings.runAsGroup();
 			if((!GD::runAsUser.empty() && GD::runAsGroup.empty()) || (!GD::runAsGroup.empty() && GD::runAsUser.empty()))
 			{
-				GD::out.printCritical("Critical: You only provided a user OR a group for Homegear InfluxDB to run as. Please specify both.");
+				GD::out.printCritical("Critical: You only provided a user OR a group for Homegear Gateway to run as. Please specify both.");
 				exit(1);
 			}
 			GD::bl->userId = GD::bl->hf.userId(GD::runAsUser);

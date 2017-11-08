@@ -29,7 +29,7 @@
 */
 
 #include "Settings.h"
-#include "GD/GD.h"
+#include "GD.h"
 
 Settings::Settings()
 {
@@ -38,14 +38,14 @@ Settings::Settings()
 void Settings::reset()
 {
 	_listenAddress = "::";
-	_port = 2003;
+	_port = 2017;
 	_runAsUser = "";
 	_runAsGroup = "";
 	_debugLevel = 3;
 	_memoryDebugging = false;
 	_enableCoreDumps = true;
 	_workingDirectory = _executablePath;
-	_logfilePath = "/var/log/homegear-influxdb/";
+	_logfilePath = "/var/log/homegear-gateway/";
 	_secureMemorySize = 65536;
 	_caFile = "";
 	_certPath = "";
@@ -114,7 +114,7 @@ void Settings::load(std::string filename, std::string executablePath)
 				else if(name == "port")
 				{
 					_port = BaseLib::Math::getNumber(value);
-					if(_port < 1 || _port > 65535) _port = 8086;
+					if(_port < 1 || _port > 65535) _port = 2017;
 					GD::bl->out.printDebug("Debug: port set to " + std::to_string(_port));
 				}
 				else if(name == "runasuser")
@@ -154,7 +154,7 @@ void Settings::load(std::string filename, std::string executablePath)
 				else if(name == "logfilepath")
 				{
 					_logfilePath = value;
-					if(_logfilePath.empty()) _logfilePath = "/var/log/homegear-influxdb/";
+					if(_logfilePath.empty()) _logfilePath = "/var/log/homegear-gateway/";
 					if(_logfilePath.back() != '/') _logfilePath.push_back('/');
 					GD::bl->out.printDebug("Debug: logfilePath set to " + _logfilePath);
 				}
@@ -185,6 +185,16 @@ void Settings::load(std::string filename, std::string executablePath)
 					_dhPath = value;
 					GD::bl->out.printDebug("Debug: dhPath set to " + _dhPath);
 				}
+                else if(name == "family")
+                {
+                    _family = BaseLib::HelperFunctions::toLower(value);
+                    GD::bl->out.printDebug("Debug: family set to " + _family);
+                }
+                else if(name == "device")
+                {
+                    _device = value;
+                    GD::bl->out.printDebug("Debug: device set to " + _device);
+                }
 				else
 				{
 					GD::bl->out.printWarning("Warning: Setting not found: " + std::string(input));

@@ -28,43 +28,23 @@
  * files in the program, then also delete it here.
 */
 
-#ifndef RPCSERVER_H_
-#define RPCSERVER_H_
+#ifndef HOMEGEAR_GATEWAY_ICOMMUNICATIONINTERFACE_H
+#define HOMEGEAR_GATEWAY_ICOMMUNICATIONINTERFACE_H
 
 #include <homegear-base/BaseLib.h>
-#include "Families/ICommunicationInterface.h"
 
-class RpcServer
+class ICommunicationInterface
 {
 public:
-	RpcServer(BaseLib::SharedObjects* bl);
-	virtual ~RpcServer();
-
-	bool start();
-	void stop();
-    BaseLib::PVariable invoke(std::string methodName, BaseLib::PArray& parameters);
-private:
-	BaseLib::SharedObjects* _bl = nullptr;
-
-	std::shared_ptr<BaseLib::TcpSocket> _tcpServer;
-	std::unique_ptr<BaseLib::Rpc::BinaryRpc> _binaryRpc;
-    std::unique_ptr<BaseLib::Rpc::RpcEncoder> _rpcEncoder;
-    std::unique_ptr<BaseLib::Rpc::RpcDecoder> _rpcDecoder;
-
-	std::atomic_bool _stopped;
-    std::atomic_bool _clientConnected;
-    int32_t _clientId = 0;
-
-    std::mutex _invokeMutex;
-    std::mutex _requestMutex;
-    std::atomic_bool _waitForResponse;
-    std::condition_variable _requestConditionVariable;
-    BaseLib::PVariable _rpcResponse;
-
-    std::unique_ptr<ICommunicationInterface> _interface;
-
-	void newConnection(int32_t clientId, std::string address, uint16_t port);
-	void packetReceived(int32_t clientId, BaseLib::TcpSocket::TcpPacket packet);
+    ICommunicationInterface(BaseLib::SharedObjects* bl);
+    virtual ~ICommunicationInterface() = default;
+    virtual BaseLib::PVariable callMethod(std::string& method, BaseLib::PArray parameters) = 0;
+    void setInvoke(std::function<BaseLib::PVariable(std::string, BaseLib::PArray&)> value) { _invoke.swap(value); }
+protected:
+    BaseLib::SharedObjects* _bl = nullptr;
+    std::map<std::string, std::function<BaseLib::PVariable(BaseLib::PArray& parameters)>> _localRpcMethods;
+    std::function<BaseLib::PVariable(std::string, BaseLib::PArray&)> _invoke;
 };
+
 
 #endif
