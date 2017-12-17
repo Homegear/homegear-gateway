@@ -58,6 +58,8 @@ void Settings::reset()
 
     _family = "";
     _device = "";
+	_gpio1 = -1;
+	_gpio2 = -1;
 }
 
 bool Settings::changed()
@@ -217,6 +219,18 @@ void Settings::load(std::string filename, std::string executablePath)
                     _device = value;
                     GD::bl->out.printDebug("Debug: device set to " + _device);
                 }
+				else if(name == "gpio1")
+				{
+					_gpio1 = BaseLib::Math::getNumber(value);
+					if(_gpio1 < 0) _gpio1 =  -1;
+					GD::bl->out.printDebug("Debug: gpio1 set to " + std::to_string(_gpio1));
+				}
+				else if(name == "gpio2")
+				{
+					_gpio2 = BaseLib::Math::getNumber(value);
+					if(_gpio2 < 0) _gpio2 =  -1;
+					GD::bl->out.printDebug("Debug: gpio2 set to " + std::to_string(_gpio2));
+				}
 				else
 				{
 					GD::bl->out.printWarning("Warning: Setting not found: " + std::string(input));

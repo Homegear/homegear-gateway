@@ -62,6 +62,8 @@ public:
 
     std::string family() { return _family; }
     std::string device() { return _device; }
+	int32_t gpio1() { return _gpio1; }
+    int32_t gpio2() { return _gpio2; }
 private:
 	std::string _executablePath;
 	std::string _path;
@@ -88,6 +90,8 @@ private:
 
 	std::string _family;
     std::string _device;
+	int32_t _gpio1 = -1;
+	int32_t _gpio2 = -1;
 
 	void reset();
 };
