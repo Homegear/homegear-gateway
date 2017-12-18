@@ -28,18 +28,18 @@
  * files in the program, then also delete it here.
 */
 
-#include "HomeMaticCoc.h"
+#include "HomeMaticCulfw.h"
 #include "../GD.h"
 
-HomeMaticCoc::HomeMaticCoc(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl)
+HomeMaticCulfw::HomeMaticCulfw(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl)
 {
     try
     {
         _updateMode = false;
 
-        _localRpcMethods.emplace("sendPacket", std::bind(&HomeMaticCoc::sendPacket, this, std::placeholders::_1));
-        _localRpcMethods.emplace("enableUpdateMode", std::bind(&HomeMaticCoc::enableUpdateMode, this, std::placeholders::_1));
-        _localRpcMethods.emplace("disableUpdateMode", std::bind(&HomeMaticCoc::disableUpdateMode, this, std::placeholders::_1));
+        _localRpcMethods.emplace("sendPacket", std::bind(&HomeMaticCulfw::sendPacket, this, std::placeholders::_1));
+        _localRpcMethods.emplace("enableUpdateMode", std::bind(&HomeMaticCulfw::enableUpdateMode, this, std::placeholders::_1));
+        _localRpcMethods.emplace("disableUpdateMode", std::bind(&HomeMaticCulfw::disableUpdateMode, this, std::placeholders::_1));
 
         _gpio.reset(new BaseLib::LowLevel::Gpio(bl));
 
@@ -59,7 +59,7 @@ HomeMaticCoc::HomeMaticCoc(BaseLib::SharedObjects* bl) : ICommunicationInterface
     }
 }
 
-HomeMaticCoc::~HomeMaticCoc()
+HomeMaticCulfw::~HomeMaticCulfw()
 {
     try
     {
@@ -79,7 +79,7 @@ HomeMaticCoc::~HomeMaticCoc()
     }
 }
 
-void HomeMaticCoc::start()
+void HomeMaticCulfw::start()
 {
     try
     {
@@ -132,7 +132,7 @@ void HomeMaticCoc::start()
     }
 }
 
-void HomeMaticCoc::stop()
+void HomeMaticCulfw::stop()
 {
     try
     {
@@ -155,7 +155,7 @@ void HomeMaticCoc::stop()
     }
 }
 
-void HomeMaticCoc::lineReceived(const std::string& data)
+void HomeMaticCulfw::lineReceived(const std::string& data)
 {
     try
     {
@@ -195,7 +195,7 @@ void HomeMaticCoc::lineReceived(const std::string& data)
     }
 }
 
-BaseLib::PVariable HomeMaticCoc::callMethod(std::string& method, BaseLib::PArray parameters)
+BaseLib::PVariable HomeMaticCulfw::callMethod(std::string& method, BaseLib::PArray parameters)
 {
     try
     {
@@ -222,7 +222,7 @@ BaseLib::PVariable HomeMaticCoc::callMethod(std::string& method, BaseLib::PArray
 }
 
 //{{{ RPC methods
-BaseLib::PVariable HomeMaticCoc::sendPacket(BaseLib::PArray& parameters)
+BaseLib::PVariable HomeMaticCulfw::sendPacket(BaseLib::PArray& parameters)
 {
     try
     {
@@ -253,7 +253,7 @@ BaseLib::PVariable HomeMaticCoc::sendPacket(BaseLib::PArray& parameters)
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
 }
 
-BaseLib::PVariable HomeMaticCoc::enableUpdateMode(BaseLib::PArray& parameters)
+BaseLib::PVariable HomeMaticCulfw::enableUpdateMode(BaseLib::PArray& parameters)
 {
     try
     {
@@ -278,7 +278,7 @@ BaseLib::PVariable HomeMaticCoc::enableUpdateMode(BaseLib::PArray& parameters)
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
 }
 
-BaseLib::PVariable HomeMaticCoc::disableUpdateMode(BaseLib::PArray& parameters)
+BaseLib::PVariable HomeMaticCulfw::disableUpdateMode(BaseLib::PArray& parameters)
 {
     try
     {

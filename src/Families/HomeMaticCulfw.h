@@ -35,11 +35,11 @@
 
 #define HOMEMATIC_COC_FAMILY_ID 0
 
-class HomeMaticCoc : public ICommunicationInterface, public BaseLib::SerialReaderWriter::ISerialReaderWriterEventSink
+class HomeMaticCulfw : public ICommunicationInterface, public BaseLib::SerialReaderWriter::ISerialReaderWriterEventSink
 {
 public:
-    HomeMaticCoc(BaseLib::SharedObjects* bl);
-    virtual ~HomeMaticCoc();
+    HomeMaticCulfw(BaseLib::SharedObjects* bl);
+    virtual ~HomeMaticCulfw();
     virtual BaseLib::PVariable callMethod(std::string& method, BaseLib::PArray parameters);
 private:
     std::atomic_bool _updateMode;
