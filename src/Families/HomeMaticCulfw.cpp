@@ -91,7 +91,7 @@ void HomeMaticCulfw::start()
 
         _serial.reset(new BaseLib::SerialReaderWriter(_bl, GD::settings.device(), 38400, 0, true, 45));
         _eventHandlerSelf = _serial->addEventHandler(this);
-        _serial->openDevice(false, false, false);
+        _serial->openDevice(false, false, true);
         if(!_serial->isOpen())
         {
             GD::out.printError("Error: Could not open device.");
@@ -168,10 +168,13 @@ void HomeMaticCulfw::lineReceived(const std::string& data)
             parameters->push_back(std::make_shared<BaseLib::Variable>(HOMEMATIC_COC_FAMILY_ID));
             parameters->push_back(std::make_shared<BaseLib::Variable>(data));
 
-            auto result = _invoke("packetReceived", parameters);
-            if(result->errorStruct && result->structValue->at("faultCode")->integerValue != -1)
+            if(_invoke)
             {
-                GD::out.printError("Error calling packetReceived(): " + result->structValue->at("faultString")->stringValue);
+                auto result = _invoke("packetReceived", parameters);
+                if(result->errorStruct && result->structValue->at("faultCode")->integerValue != -1)
+                {
+                    GD::out.printError("Error calling packetReceived(): " + result->structValue->at("faultString")->stringValue);
+                }
             }
         }
         else if(!data.empty())

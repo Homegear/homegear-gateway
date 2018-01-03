@@ -84,7 +84,7 @@ private:
 	std::string _keyPath;
 	std::string _dhPath;
 
-    bool _enableUpnp = true;
+    bool _enableUpnp = false;
     std::string _upnpIpAddress;
     std::string _upnpUdn;
 

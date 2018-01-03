@@ -337,8 +337,8 @@ void startUp()
 
 		setLimits();
 
-        if(GD::runAsUser.empty()) GD::runAsUser = GD::bl->settings.runAsUser();
-        if(GD::runAsGroup.empty()) GD::runAsGroup = GD::bl->settings.runAsGroup();
+        if(GD::runAsUser.empty()) GD::runAsUser = GD::settings.runAsUser();
+        if(GD::runAsGroup.empty()) GD::runAsGroup = GD::settings.runAsGroup();
         if((!GD::runAsUser.empty() && GD::runAsGroup.empty()) || (!GD::runAsGroup.empty() && GD::runAsUser.empty()))
         {
             GD::out.printCritical("Critical: You only provided a user OR a group for Homegear to run as. Please specify both.");
@@ -474,7 +474,7 @@ void startUp()
 
         GD::out.printMessage("Startup complete.");
 
-		if(GD::bl->settings.enableUPnP())
+		if(GD::settings.enableUpnp())
 		{
 			GD::out.printInfo("Starting UPnP server...");
 			GD::upnp = std::unique_ptr<UPnP>(new UPnP());
