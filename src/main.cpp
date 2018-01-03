@@ -337,6 +337,27 @@ void startUp()
 
 		setLimits();
 
+        if(GD::runAsUser.empty()) GD::runAsUser = GD::bl->settings.runAsUser();
+        if(GD::runAsGroup.empty()) GD::runAsGroup = GD::bl->settings.runAsGroup();
+        if((!GD::runAsUser.empty() && GD::runAsGroup.empty()) || (!GD::runAsGroup.empty() && GD::runAsUser.empty()))
+        {
+            GD::out.printCritical("Critical: You only provided a user OR a group for Homegear to run as. Please specify both.");
+            exit(1);
+        }
+        uid_t userId = GD::bl->hf.userId(GD::runAsUser);
+        gid_t groupId = GD::bl->hf.groupId(GD::runAsGroup);
+        std::string currentPath;
+        if(!GD::pidfilePath.empty() && GD::pidfilePath.find('/') != std::string::npos)
+        {
+            currentPath = GD::pidfilePath.substr(0, GD::pidfilePath.find_last_of('/'));
+            if(!currentPath.empty())
+            {
+                if(!BaseLib::Io::directoryExists(currentPath)) BaseLib::Io::createDirectory(currentPath, S_IRWXU | S_IRWXG);
+                if(chown(currentPath.c_str(), userId, groupId) == -1) std::cerr << "Could not set owner on " << currentPath << std::endl;
+                if(chmod(currentPath.c_str(), S_IRWXU | S_IRWXG) == -1) std::cerr << "Could not set permissions on " << currentPath << std::endl;
+            }
+        }
+
     	if(getuid() == 0 && !GD::runAsUser.empty() && !GD::runAsGroup.empty())
     	{
 			if(GD::bl->userId == 0 || GD::bl->groupId == 0)
