@@ -233,7 +233,7 @@ BaseLib::PVariable HomeMaticCulfw::sendPacket(BaseLib::PArray& parameters)
 
         if(!_serial)
         {
-            GD::out.printError("Error: Couldn't write to COC device, because the device descriptor is not valid: " + GD::settings.device());
+            GD::out.printError("Error: Couldn't write to device, because the device descriptor is not valid: " + GD::settings.device());
             return BaseLib::Variable::createError(-1, "Serial device is not open.");
         }
 
