@@ -247,7 +247,7 @@ void setLimits()
 
 void printHelp()
 {
-	std::cout << "Usage: homegear [OPTIONS]" << std::endl << std::endl;
+	std::cout << "Usage: homegear-gateway [OPTIONS]" << std::endl << std::endl;
 	std::cout << "Option              Meaning" << std::endl;
 	std::cout << "-h                  Show this help" << std::endl;
 	std::cout << "-u                  Run as user" << std::endl;
