@@ -76,10 +76,10 @@ bool RpcServer::start()
         BaseLib::TcpSocket::TcpServerInfo serverInfo;
         serverInfo.maxConnections = 1;
         serverInfo.useSsl = true;
-        serverInfo.certFile = GD::settings.certPath();
-        serverInfo.keyFile = GD::settings.keyPath();
+        serverInfo.certFiles.push_back(GD::settings.certPath());
+        serverInfo.keyFiles.push_back(GD::settings.keyPath());
         serverInfo.dhParamFile = GD::settings.dhPath();
-        serverInfo.caFile = GD::settings.caFile();
+        serverInfo.caFiles.push_back(GD::settings.caFile());
         serverInfo.requireClientCert = true;
         serverInfo.newConnectionCallback = std::bind(&RpcServer::newConnection, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         serverInfo.packetReceivedCallback = std::bind(&RpcServer::packetReceived, this, std::placeholders::_1, std::placeholders::_2);
