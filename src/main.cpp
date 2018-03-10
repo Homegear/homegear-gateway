@@ -108,11 +108,11 @@ void terminate(int signalNumber)
 			}
 			_startUpComplete = false;
 			_shuttingDownMutex.unlock();
-			if(!std::freopen((GD::settings.logfilePath() + "homegear-gateway.log").c_str(), "a", stdout))
+			if(!std::freopen((GD::settings.logFilePath() + "homegear-gateway.log").c_str(), "a", stdout))
 			{
 				GD::out.printError("Error: Could not redirect output to new log file.");
 			}
-			if(!std::freopen((GD::settings.logfilePath() + "homegear-gateway.err").c_str(), "a", stderr))
+			if(!std::freopen((GD::settings.logFilePath() + "homegear-gateway.err").c_str(), "a", stderr))
 			{
 				GD::out.printError("Error: Could not redirect errors to new log file.");
 			}
@@ -320,11 +320,11 @@ void startUp()
     	sigaction(SIGSEGV, &sa, NULL);
 		sigaction(SIGINT, &sa, NULL);
 
-		if(!std::freopen((GD::settings.logfilePath() + "homegear-gateway.log").c_str(), "a", stdout))
+		if(!std::freopen((GD::settings.logFilePath() + "homegear-gateway.log").c_str(), "a", stdout))
 		{
 			GD::out.printError("Error: Could not redirect output to log file.");
 		}
-		if(!std::freopen((GD::settings.logfilePath() + "homegear-gateway.err").c_str(), "a", stderr))
+		if(!std::freopen((GD::settings.logFilePath() + "homegear-gateway.err").c_str(), "a", stderr))
 		{
 			GD::out.printError("Error: Could not redirect errors to log file.");
 		}

@@ -45,7 +45,8 @@ void Settings::reset()
 	_memoryDebugging = false;
 	_enableCoreDumps = true;
 	_workingDirectory = _executablePath;
-	_logfilePath = "/var/log/homegear-gateway/";
+	_logFilePath = "/var/log/homegear-gateway/";
+	_lockFilePath = "/var/lock/";
 	_secureMemorySize = 65536;
 	_caFile = "";
 	_certPath = "";
@@ -162,10 +163,18 @@ void Settings::load(std::string filename, std::string executablePath)
 				}
 				else if(name == "logfilepath")
 				{
-					_logfilePath = value;
-					if(_logfilePath.empty()) _logfilePath = "/var/log/homegear-gateway/";
-					if(_logfilePath.back() != '/') _logfilePath.push_back('/');
-					GD::bl->out.printDebug("Debug: logfilePath set to " + _logfilePath);
+					_logFilePath = value;
+					if(_logFilePath.empty()) _logFilePath = "/var/log/homegear-gateway/";
+					if(_logFilePath.back() != '/') _logFilePath.push_back('/');
+					GD::bl->out.printDebug("Debug: logfilePath set to " + _logFilePath);
+				}
+				else if(name == "lockfilepath")
+				{
+					_lockFilePath = value;
+					if(_lockFilePath.empty()) _lockFilePath = "/var/lock/";
+					if(_lockFilePath.back() != '/') _lockFilePath.push_back('/');
+					GD::bl->settings.setLockFilePath(_lockFilePath);
+					GD::bl->out.printDebug("Debug: lockfilePath set to " + _lockFilePath);
 				}
 				else if(name == "securememorysize")
 				{
