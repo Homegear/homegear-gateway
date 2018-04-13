@@ -54,7 +54,7 @@ local.properties
 autom4te.cache
 *.in~
 config.log
-homegear-influxdb
+homegear-gateway
 core
 vgcore.*
 
