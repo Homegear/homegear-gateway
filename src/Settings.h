@@ -49,7 +49,8 @@ public:
 	bool memoryDebugging() { return _memoryDebugging; }
 	bool enableCoreDumps() { return _enableCoreDumps; };
 	std::string workingDirectory() { return _workingDirectory; }
-	std::string logfilePath() { return _logfilePath; }
+	std::string logFilePath() { return _logFilePath; }
+	std::string lockFilePath() { return _lockFilePath; }
 	uint32_t secureMemorySize() { return _secureMemorySize; }
 	std::string caFile() { return _caFile; }
 	std::string certPath() { return _certPath; }
@@ -77,7 +78,8 @@ private:
 	bool _memoryDebugging = false;
 	bool _enableCoreDumps = true;
 	std::string _workingDirectory;
-	std::string _logfilePath;
+	std::string _logFilePath;
+	std::string _lockFilePath;
 	uint32_t _secureMemorySize = 65536;
 	std::string _caFile;
 	std::string _certPath;

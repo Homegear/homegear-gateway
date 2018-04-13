@@ -1,6 +1,6 @@
 [Unit]
 Description=Homegear Gateway
-After=homegear
+After=network.target
 
 [Install]
 WantedBy=multi-user.target
