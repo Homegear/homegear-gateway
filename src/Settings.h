@@ -49,15 +49,22 @@ public:
 	bool memoryDebugging() { return _memoryDebugging; }
 	bool enableCoreDumps() { return _enableCoreDumps; };
 	std::string workingDirectory() { return _workingDirectory; }
-	std::string logfilePath() { return _logfilePath; }
+	std::string logFilePath() { return _logFilePath; }
+	std::string lockFilePath() { return _lockFilePath; }
 	uint32_t secureMemorySize() { return _secureMemorySize; }
 	std::string caFile() { return _caFile; }
 	std::string certPath() { return _certPath; }
 	std::string keyPath() { return _keyPath; }
 	std::string dhPath() { return _dhPath; }
 
+    bool enableUpnp() { return _enableUpnp; }
+    std::string upnpIpAddress() { return _upnpIpAddress; }
+    std::string upnpUdn() { return _upnpUdn; }
+
     std::string family() { return _family; }
     std::string device() { return _device; }
+	int32_t gpio1() { return _gpio1; }
+    int32_t gpio2() { return _gpio2; }
 private:
 	std::string _executablePath;
 	std::string _path;
@@ -71,15 +78,22 @@ private:
 	bool _memoryDebugging = false;
 	bool _enableCoreDumps = true;
 	std::string _workingDirectory;
-	std::string _logfilePath;
+	std::string _logFilePath;
+	std::string _lockFilePath;
 	uint32_t _secureMemorySize = 65536;
 	std::string _caFile;
 	std::string _certPath;
 	std::string _keyPath;
 	std::string _dhPath;
 
+    bool _enableUpnp = false;
+    std::string _upnpIpAddress;
+    std::string _upnpUdn;
+
 	std::string _family;
     std::string _device;
+	int32_t _gpio1 = -1;
+	int32_t _gpio2 = -1;
 
 	void reset();
 };

@@ -35,6 +35,7 @@
 
 #include <homegear-base/BaseLib.h>
 #include "RpcServer.h"
+#include "UPnP.h"
 
 class GD
 {
@@ -51,6 +52,7 @@ public:
 	static int64_t startingTime;
 	static Settings settings;
     static std::unique_ptr<RpcServer> rpcServer;
+	static std::unique_ptr<UPnP> upnp;
 
 	virtual ~GD() = default;
 private:

@@ -79,6 +79,11 @@ void terminate(int signalNumber)
 			GD::bl->shuttingDown = true;
 			_shuttingDownMutex.unlock();
 			_disposing = true;
+			if(GD::upnp)
+			{
+				GD::out.printInfo("Stopping UPnP server...");
+				GD::upnp->stop();
+			}
 			GD::rpcServer->stop();
 			GD::rpcServer.reset();
 			GD::out.printMessage("(Shutdown) => Shutdown complete.");
@@ -103,11 +108,11 @@ void terminate(int signalNumber)
 			}
 			_startUpComplete = false;
 			_shuttingDownMutex.unlock();
-			if(!std::freopen((GD::settings.logfilePath() + "homegear-gateway.log").c_str(), "a", stdout))
+			if(!std::freopen((GD::settings.logFilePath() + "homegear-gateway.log").c_str(), "a", stdout))
 			{
 				GD::out.printError("Error: Could not redirect output to new log file.");
 			}
-			if(!std::freopen((GD::settings.logfilePath() + "homegear-gateway.err").c_str(), "a", stderr))
+			if(!std::freopen((GD::settings.logFilePath() + "homegear-gateway.err").c_str(), "a", stderr))
 			{
 				GD::out.printError("Error: Could not redirect errors to new log file.");
 			}
@@ -242,7 +247,7 @@ void setLimits()
 
 void printHelp()
 {
-	std::cout << "Usage: homegear [OPTIONS]" << std::endl << std::endl;
+	std::cout << "Usage: homegear-gateway [OPTIONS]" << std::endl << std::endl;
 	std::cout << "Option              Meaning" << std::endl;
 	std::cout << "-h                  Show this help" << std::endl;
 	std::cout << "-u                  Run as user" << std::endl;
@@ -315,11 +320,11 @@ void startUp()
     	sigaction(SIGSEGV, &sa, NULL);
 		sigaction(SIGINT, &sa, NULL);
 
-		if(!std::freopen((GD::settings.logfilePath() + "homegear-gateway.log").c_str(), "a", stdout))
+		if(!std::freopen((GD::settings.logFilePath() + "homegear-gateway.log").c_str(), "a", stdout))
 		{
 			GD::out.printError("Error: Could not redirect output to log file.");
 		}
-		if(!std::freopen((GD::settings.logfilePath() + "homegear-gateway.err").c_str(), "a", stderr))
+		if(!std::freopen((GD::settings.logFilePath() + "homegear-gateway.err").c_str(), "a", stderr))
 		{
 			GD::out.printError("Error: Could not redirect errors to log file.");
 		}
@@ -331,6 +336,27 @@ void startUp()
     	initGnuTls();
 
 		setLimits();
+
+        if(GD::runAsUser.empty()) GD::runAsUser = GD::settings.runAsUser();
+        if(GD::runAsGroup.empty()) GD::runAsGroup = GD::settings.runAsGroup();
+        if((!GD::runAsUser.empty() && GD::runAsGroup.empty()) || (!GD::runAsGroup.empty() && GD::runAsUser.empty()))
+        {
+            GD::out.printCritical("Critical: You only provided a user OR a group for Homegear to run as. Please specify both.");
+            exit(1);
+        }
+        uid_t userId = GD::bl->hf.userId(GD::runAsUser);
+        gid_t groupId = GD::bl->hf.groupId(GD::runAsGroup);
+        std::string currentPath;
+        if(!GD::pidfilePath.empty() && GD::pidfilePath.find('/') != std::string::npos)
+        {
+            currentPath = GD::pidfilePath.substr(0, GD::pidfilePath.find_last_of('/'));
+            if(!currentPath.empty())
+            {
+                if(!BaseLib::Io::directoryExists(currentPath)) BaseLib::Io::createDirectory(currentPath, S_IRWXU | S_IRWXG);
+                if(chown(currentPath.c_str(), userId, groupId) == -1) std::cerr << "Could not set owner on " << currentPath << std::endl;
+                if(chmod(currentPath.c_str(), S_IRWXU | S_IRWXG) == -1) std::cerr << "Could not set permissions on " << currentPath << std::endl;
+            }
+        }
 
     	if(getuid() == 0 && !GD::runAsUser.empty() && !GD::runAsGroup.empty())
     	{
@@ -447,6 +473,13 @@ void startUp()
         }
 
         GD::out.printMessage("Startup complete.");
+
+		if(GD::settings.enableUpnp())
+		{
+			GD::out.printInfo("Starting UPnP server...");
+			GD::upnp = std::unique_ptr<UPnP>(new UPnP());
+			GD::upnp->start();
+		}
 
         GD::bl->booting = false;
 

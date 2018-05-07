@@ -432,12 +432,12 @@ void EnOcean::processPacket(std::vector<uint8_t>& data)
         if(GD::bl->debugLevel >= 5) GD::out.printDebug("Debug: Packet received: " + BaseLib::HelperFunctions::getHexString(data));
 
         uint8_t packetType = data[4];
-        _requestsMutex.lock();
+        std::unique_lock<std::mutex> requestsGuard(_requestsMutex);
         std::map<uint8_t, std::shared_ptr<Request>>::iterator requestIterator = _requests.find(packetType);
         if(requestIterator != _requests.end())
         {
             std::shared_ptr<Request> request = requestIterator->second;
-            _requestsMutex.unlock();
+            requestsGuard.unlock();
             request->response = data;
             {
                 std::lock_guard<std::mutex> lock(request->mutex);
@@ -446,7 +446,7 @@ void EnOcean::processPacket(std::vector<uint8_t>& data)
             request->conditionVariable.notify_one();
             return;
         }
-        else _requestsMutex.unlock();
+        else requestsGuard.unlock();
 
         BaseLib::PArray parameters = std::make_shared<BaseLib::Array>();
         parameters->reserve(2);

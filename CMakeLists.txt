@@ -11,7 +11,15 @@ set(SOURCE_FILES
         src/RpcServer.h
         src/Settings.cpp
         src/Settings.h
-        config.h src/Families/EnOcean.cpp src/Families/EnOcean.h src/Families/ICommunicationInterface.cpp src/Families/ICommunicationInterface.h)
+        config.h
+        src/Families/EnOcean.cpp
+        src/Families/EnOcean.h
+        src/Families/HomeMaticCulfw.cpp
+        src/Families/HomeMaticCulfw.h
+        src/Families/ICommunicationInterface.cpp
+        src/Families/ICommunicationInterface.h
+        src/UPnP.cpp
+        src/UPnP.h)
 
 add_custom_target(homegear-gateway COMMAND ../makeDebug.sh SOURCES ${SOURCE_FILES})
 

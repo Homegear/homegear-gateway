@@ -31,6 +31,7 @@
 #include "RpcServer.h"
 #include "GD.h"
 #include "Families/EnOcean.h"
+#include "Families/HomeMaticCulfw.h"
 
 RpcServer::RpcServer(BaseLib::SharedObjects* bl)
 {
@@ -62,6 +63,7 @@ bool RpcServer::start()
         }
 
         if(GD::settings.family() == "enocean") _interface = std::unique_ptr<EnOcean>(new EnOcean(_bl));
+        else if(GD::settings.family() == "homematicculfw") _interface = std::unique_ptr<HomeMaticCulfw>(new HomeMaticCulfw(_bl));
 
         if(!_interface)
         {
@@ -74,10 +76,12 @@ bool RpcServer::start()
         BaseLib::TcpSocket::TcpServerInfo serverInfo;
         serverInfo.maxConnections = 1;
         serverInfo.useSsl = true;
-        serverInfo.certFile = GD::settings.certPath();
-        serverInfo.keyFile = GD::settings.keyPath();
+        BaseLib::TcpSocket::PCertificateInfo certificateInfo = std::make_shared<BaseLib::TcpSocket::CertificateInfo>();
+        certificateInfo->caFile = GD::settings.caFile();
+        certificateInfo->certFile = GD::settings.certPath();
+        certificateInfo->keyFile = GD::settings.keyPath();
+        serverInfo.certificates.emplace("*", certificateInfo);
         serverInfo.dhParamFile = GD::settings.dhPath();
-        serverInfo.caFile = GD::settings.caFile();
         serverInfo.requireClientCert = true;
         serverInfo.newConnectionCallback = std::bind(&RpcServer::newConnection, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         serverInfo.packetReceivedCallback = std::bind(&RpcServer::packetReceived, this, std::placeholders::_1, std::placeholders::_2);

@@ -42,3 +42,4 @@ std::string GD::executableFile = "";
 int64_t GD::startingTime = BaseLib::HelperFunctions::getTime();
 Settings GD::settings;
 std::unique_ptr<RpcServer> GD::rpcServer;
+std::unique_ptr<UPnP> GD::upnp;

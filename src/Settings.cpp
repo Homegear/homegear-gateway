@@ -45,12 +45,22 @@ void Settings::reset()
 	_memoryDebugging = false;
 	_enableCoreDumps = true;
 	_workingDirectory = _executablePath;
-	_logfilePath = "/var/log/homegear-gateway/";
+	_logFilePath = "/var/log/homegear-gateway/";
+	_lockFilePath = "/var/lock/";
 	_secureMemorySize = 65536;
 	_caFile = "";
 	_certPath = "";
 	_keyPath = "";
 	_dhPath = "";
+
+    _enableUpnp = true;
+    _upnpIpAddress = "";
+    _upnpUdn = "";
+
+    _family = "";
+    _device = "";
+	_gpio1 = -1;
+	_gpio2 = -1;
 }
 
 bool Settings::changed()
@@ -153,10 +163,18 @@ void Settings::load(std::string filename, std::string executablePath)
 				}
 				else if(name == "logfilepath")
 				{
-					_logfilePath = value;
-					if(_logfilePath.empty()) _logfilePath = "/var/log/homegear-gateway/";
-					if(_logfilePath.back() != '/') _logfilePath.push_back('/');
-					GD::bl->out.printDebug("Debug: logfilePath set to " + _logfilePath);
+					_logFilePath = value;
+					if(_logFilePath.empty()) _logFilePath = "/var/log/homegear-gateway/";
+					if(_logFilePath.back() != '/') _logFilePath.push_back('/');
+					GD::bl->out.printDebug("Debug: logfilePath set to " + _logFilePath);
+				}
+				else if(name == "lockfilepath")
+				{
+					_lockFilePath = value;
+					if(_lockFilePath.empty()) _lockFilePath = "/var/lock/";
+					if(_lockFilePath.back() != '/') _lockFilePath.push_back('/');
+					GD::bl->settings.setLockFilePath(_lockFilePath);
+					GD::bl->out.printDebug("Debug: lockfilePath set to " + _lockFilePath);
 				}
 				else if(name == "securememorysize")
 				{
@@ -185,6 +203,21 @@ void Settings::load(std::string filename, std::string executablePath)
 					_dhPath = value;
 					GD::bl->out.printDebug("Debug: dhPath set to " + _dhPath);
 				}
+                else if(name == "enableupnp")
+                {
+                    _enableUpnp = BaseLib::HelperFunctions::toLower(value) == "true";
+                    GD::out.printDebug("Debug: enableUPnP set to " + std::to_string(_enableUpnp));
+                }
+                else if(name == "upnpipaddress")
+                {
+                    _upnpIpAddress = value;
+                    GD::out.printDebug("Debug: uPnPIpAddress set to " + _upnpIpAddress);
+                }
+                else if(name == "upnpudn")
+                {
+                    _upnpUdn = value;
+                    GD::out.printDebug("Debug: uPnPUDN set to " + _upnpUdn);
+                }
                 else if(name == "family")
                 {
                     _family = BaseLib::HelperFunctions::toLower(value);
@@ -195,6 +228,18 @@ void Settings::load(std::string filename, std::string executablePath)
                     _device = value;
                     GD::bl->out.printDebug("Debug: device set to " + _device);
                 }
+				else if(name == "gpio1")
+				{
+					_gpio1 = BaseLib::Math::getNumber(value);
+					if(_gpio1 < 0) _gpio1 =  -1;
+					GD::bl->out.printDebug("Debug: gpio1 set to " + std::to_string(_gpio1));
+				}
+				else if(name == "gpio2")
+				{
+					_gpio2 = BaseLib::Math::getNumber(value);
+					if(_gpio2 < 0) _gpio2 =  -1;
+					GD::bl->out.printDebug("Debug: gpio2 set to " + std::to_string(_gpio2));
+				}
 				else
 				{
 					GD::bl->out.printWarning("Warning: Setting not found: " + std::string(input));
