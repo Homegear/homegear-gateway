@@ -14,6 +14,8 @@ set(SOURCE_FILES
         config.h
         src/Families/EnOcean.cpp
         src/Families/EnOcean.h
+        src/Families/HomeMaticCc1101.cpp
+        src/Families/HomeMaticCc1101.h
         src/Families/HomeMaticCulfw.cpp
         src/Families/HomeMaticCulfw.h
         src/Families/ICommunicationInterface.cpp
