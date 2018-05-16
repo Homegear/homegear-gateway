@@ -35,6 +35,8 @@ EnOcean::EnOcean(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl)
 {
     try
     {
+        _familyId = ENOCEAN_FAMILY_ID;
+
         _initComplete = false;
         _stopped = true;
 

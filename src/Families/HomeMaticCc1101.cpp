@@ -35,6 +35,8 @@ HomeMaticCc1101::HomeMaticCc1101(BaseLib::SharedObjects* bl) : ICommunicationInt
 {
     try
     {
+        _familyId = HOMEMATIC_CC1101_FAMILY_ID;
+
         _localRpcMethods.emplace("sendPacket", std::bind(&HomeMaticCc1101::sendPacket, this, std::placeholders::_1));
         _localRpcMethods.emplace("enableUpdateMode", std::bind(&HomeMaticCc1101::enableUpdateMode, this, std::placeholders::_1));
         _localRpcMethods.emplace("disableUpdateMode", std::bind(&HomeMaticCc1101::disableUpdateMode, this, std::placeholders::_1));

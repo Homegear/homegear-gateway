@@ -40,6 +40,8 @@ public:
 	RpcServer(BaseLib::SharedObjects* bl);
 	virtual ~RpcServer();
 
+	int32_t familyId();
+
 	bool start();
 	void stop();
     BaseLib::PVariable invoke(std::string methodName, BaseLib::PArray& parameters);

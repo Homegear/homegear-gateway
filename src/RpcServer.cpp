@@ -52,6 +52,13 @@ RpcServer::~RpcServer()
 
 }
 
+int32_t RpcServer::familyId()
+{
+    if(_interface) return _interface->familyId();
+
+    return -1;
+}
+
 bool RpcServer::start()
 {
     try

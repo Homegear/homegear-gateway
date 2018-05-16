@@ -38,10 +38,14 @@ class ICommunicationInterface
 public:
     ICommunicationInterface(BaseLib::SharedObjects* bl);
     virtual ~ICommunicationInterface() = default;
+
+    int32_t familyId() { return _familyId; }
+
     virtual BaseLib::PVariable callMethod(std::string& method, BaseLib::PArray parameters) = 0;
     void setInvoke(std::function<BaseLib::PVariable(std::string, BaseLib::PArray&)> value) { _invoke.swap(value); }
 protected:
     BaseLib::SharedObjects* _bl = nullptr;
+    int32_t _familyId = -1;
     std::map<std::string, std::function<BaseLib::PVariable(BaseLib::PArray& parameters)>> _localRpcMethods;
     std::function<BaseLib::PVariable(std::string, BaseLib::PArray&)> _invoke;
 };

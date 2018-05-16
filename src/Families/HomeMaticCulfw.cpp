@@ -35,6 +35,8 @@ HomeMaticCulfw::HomeMaticCulfw(BaseLib::SharedObjects* bl) : ICommunicationInter
 {
     try
     {
+        _familyId = HOMEMATIC_COC_FAMILY_ID;
+
         _updateMode = false;
 
         _localRpcMethods.emplace("sendPacket", std::bind(&HomeMaticCulfw::sendPacket, this, std::placeholders::_1));
