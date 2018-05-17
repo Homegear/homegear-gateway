@@ -87,7 +87,7 @@ void HomeMaticCulfw::start()
     {
         if(GD::settings.device().empty())
         {
-            GD::out.printError("Error: No device defined for family EnOcean. Please specify it in \"gateway.conf\".");
+            GD::out.printError("Error: No device defined for family HomeMatic BidCoS CUL. Please specify it in \"gateway.conf\".");
             return;
         }
 

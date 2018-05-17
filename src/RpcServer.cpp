@@ -32,6 +32,7 @@
 #include "GD.h"
 #include "Families/EnOcean.h"
 #include "Families/HomeMaticCulfw.h"
+#include "Families/HomeMaticCc1101.h"
 
 RpcServer::RpcServer(BaseLib::SharedObjects* bl)
 {
@@ -71,6 +72,7 @@ bool RpcServer::start()
 
         if(GD::settings.family() == "enocean") _interface = std::unique_ptr<EnOcean>(new EnOcean(_bl));
         else if(GD::settings.family() == "homematicculfw") _interface = std::unique_ptr<HomeMaticCulfw>(new HomeMaticCulfw(_bl));
+        else if(GD::settings.family() == "homematiccc1101") _interface = std::unique_ptr<HomeMaticCc1101>(new HomeMaticCc1101(_bl));
 
         if(!_interface)
         {

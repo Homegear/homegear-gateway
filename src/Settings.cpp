@@ -240,6 +240,21 @@ void Settings::load(std::string filename, std::string executablePath)
 					if(_gpio2 < 0) _gpio2 =  -1;
 					GD::bl->out.printDebug("Debug: gpio2 set to " + std::to_string(_gpio2));
 				}
+				else if(name == "oscillatorfrequency")
+				{
+					_oscillatorFrequency = BaseLib::Math::getNumber(value);
+					if(_oscillatorFrequency < 0) _oscillatorFrequency = -1;
+					GD::bl->out.printDebug("Debug: oscillatorFrequency set to " + std::to_string(_oscillatorFrequency));
+				}
+				else if(name == "interruptpin")
+				{
+					int32_t number = BaseLib::Math::getNumber(value);
+					if(number >= 0)
+					{
+						_interruptPin = number;
+						GD::bl->out.printDebug("Debug: interruptPin set to " + std::to_string(_interruptPin));
+					}
+				}
 				else
 				{
 					GD::bl->out.printWarning("Warning: Setting not found: " + std::string(input));
