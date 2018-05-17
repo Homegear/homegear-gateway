@@ -41,6 +41,7 @@ public:
 	virtual ~RpcServer();
 
 	int32_t familyId();
+	bool isUnconfigured() { return _unconfigured; }
 
 	bool start();
 	void stop();
@@ -53,6 +54,7 @@ private:
     std::unique_ptr<BaseLib::Rpc::RpcEncoder> _rpcEncoder;
     std::unique_ptr<BaseLib::Rpc::RpcDecoder> _rpcDecoder;
 
+	std::atomic_bool _unconfigured;
 	std::atomic_bool _stopped;
     std::atomic_bool _clientConnected;
     int32_t _clientId = 0;

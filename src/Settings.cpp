@@ -46,6 +46,7 @@ void Settings::reset()
 	_enableCoreDumps = true;
 	_workingDirectory = _executablePath;
 	_logFilePath = "/var/log/homegear-gateway/";
+    _dataPath = "/var/lib/homegear-gateway/";
 	_lockFilePath = "/var/lock/";
 	_secureMemorySize = 65536;
 	_caFile = "";
@@ -168,6 +169,13 @@ void Settings::load(std::string filename, std::string executablePath)
 					if(_logFilePath.back() != '/') _logFilePath.push_back('/');
 					GD::bl->out.printDebug("Debug: logfilePath set to " + _logFilePath);
 				}
+                else if(name == "datapath")
+                {
+                    _dataPath = value;
+                    if(_dataPath.empty()) _dataPath = "/var/lib/homegear-gateway/";
+                    if(_dataPath.back() != '/') _dataPath.push_back('/');
+                    GD::bl->out.printDebug("Debug: dataPath set to " + _dataPath);
+                }
 				else if(name == "lockfilepath")
 				{
 					_lockFilePath = value;

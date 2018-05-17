@@ -39,6 +39,7 @@ RpcServer::RpcServer(BaseLib::SharedObjects* bl)
     signal(SIGPIPE, SIG_IGN);
 
     _stopped = true;
+    _unconfigured = false;
     _clientConnected = false;
     _waitForResponse = false;
 
@@ -86,12 +87,45 @@ bool RpcServer::start()
         serverInfo.maxConnections = 1;
         serverInfo.useSsl = true;
         BaseLib::TcpSocket::PCertificateInfo certificateInfo = std::make_shared<BaseLib::TcpSocket::CertificateInfo>();
-        certificateInfo->caFile = GD::settings.caFile();
-        certificateInfo->certFile = GD::settings.certPath();
-        certificateInfo->keyFile = GD::settings.keyPath();
-        serverInfo.certificates.emplace("*", certificateInfo);
-        serverInfo.dhParamFile = GD::settings.dhPath();
-        serverInfo.requireClientCert = true;
+
+        std::string caFile = GD::settings.caFile();
+        if(caFile.empty()) caFile = GD::settings.dataPath() + "ca.crt";
+        if(!BaseLib::Io::fileExists(caFile))
+        {
+            caFile = "";
+            _unconfigured = true;
+            serverInfo.useSsl = false;
+        }
+        certificateInfo->caFile = caFile;
+
+        std::string certFile = GD::settings.certPath();
+        if(certFile.empty()) certFile = GD::settings.dataPath() + "gateway.crt";
+        if(!BaseLib::Io::fileExists(certFile))
+        {
+            certFile = "";
+            _unconfigured = true;
+            serverInfo.useSsl = false;
+        }
+        certificateInfo->certFile = certFile;
+
+        std::string keyFile = GD::settings.keyPath();
+        if(keyFile.empty()) keyFile = GD::settings.dataPath() + "gateway.key";
+        if(!BaseLib::Io::fileExists(keyFile))
+        {
+            keyFile = "";
+            _unconfigured = true;
+            serverInfo.useSsl = false;
+        }
+        certificateInfo->keyFile = keyFile;
+
+        if(!_unconfigured)
+        {
+            serverInfo.certificates.emplace("*", certificateInfo);
+            std::string dhFile = GD::settings.dhPath();
+            if(dhFile.empty()) dhFile = GD::settings.dataPath() + "dh.pem";
+            serverInfo.dhParamFile = dhFile;
+            serverInfo.requireClientCert = true;
+        }
         serverInfo.newConnectionCallback = std::bind(&RpcServer::newConnection, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         serverInfo.packetReceivedCallback = std::bind(&RpcServer::packetReceived, this, std::placeholders::_1, std::placeholders::_2);
 
@@ -169,27 +203,34 @@ void RpcServer::packetReceived(int32_t clientId, BaseLib::TcpSocket::TcpPacket p
 {
     try
     {
-        _binaryRpc->process((char*)packet.data(), packet.size());
-        if(_binaryRpc->isFinished())
+        if(_unconfigured)
         {
-            if(_binaryRpc->getType() == BaseLib::Rpc::BinaryRpc::Type::request)
+            GD::out.printInfo("Packet received: " + BaseLib::HelperFunctions::getHexString(packet));
+        }
+        else
+        {
+            _binaryRpc->process((char*) packet.data(), packet.size());
+            if(_binaryRpc->isFinished())
             {
-                std::string method;
-                auto parameters = _rpcDecoder->decodeRequest(_binaryRpc->getData(), method);
+                if(_binaryRpc->getType() == BaseLib::Rpc::BinaryRpc::Type::request)
+                {
+                    std::string method;
+                    auto parameters = _rpcDecoder->decodeRequest(_binaryRpc->getData(), method);
 
-                BaseLib::PVariable response = _interface->callMethod(method, parameters);
-                std::vector<uint8_t> data;
-                _rpcEncoder->encodeResponse(response, data);
-                _tcpServer->sendToClient(clientId, data);
+                    BaseLib::PVariable response = _interface->callMethod(method, parameters);
+                    std::vector<uint8_t> data;
+                    _rpcEncoder->encodeResponse(response, data);
+                    _tcpServer->sendToClient(clientId, data);
+                }
+                else if(_binaryRpc->getType() == BaseLib::Rpc::BinaryRpc::Type::response && _waitForResponse)
+                {
+                    std::unique_lock<std::mutex> requestLock(_requestMutex);
+                    _rpcResponse = _rpcDecoder->decodeResponse(_binaryRpc->getData());
+                    requestLock.unlock();
+                    _requestConditionVariable.notify_all();
+                }
+                _binaryRpc->reset();
             }
-            else if(_binaryRpc->getType() == BaseLib::Rpc::BinaryRpc::Type::response && _waitForResponse)
-            {
-                std::unique_lock<std::mutex> requestLock(_requestMutex);
-                _rpcResponse = _rpcDecoder->decodeResponse(_binaryRpc->getData());
-                requestLock.unlock();
-                _requestConditionVariable.notify_all();
-            }
-            _binaryRpc->reset();
         }
     }
     catch(BaseLib::Exception& ex)
@@ -210,7 +251,7 @@ BaseLib::PVariable RpcServer::invoke(std::string methodName, BaseLib::PArray& pa
 {
     try
     {
-        if(_tcpServer->clientCount() == 0) return BaseLib::Variable::createError(-1, "No client connected.");
+        if(_unconfigured || _tcpServer->clientCount() == 0) return BaseLib::Variable::createError(-1, "No client connected.");
         std::lock_guard<std::mutex> invokeGuard(_invokeMutex);
 
         std::unique_lock<std::mutex> requestLock(_requestMutex);

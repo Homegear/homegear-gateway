@@ -50,6 +50,7 @@ public:
 	bool enableCoreDumps() { return _enableCoreDumps; };
 	std::string workingDirectory() { return _workingDirectory; }
 	std::string logFilePath() { return _logFilePath; }
+	std::string dataPath() { return _dataPath; }
 	std::string lockFilePath() { return _lockFilePath; }
 	uint32_t secureMemorySize() { return _secureMemorySize; }
 	std::string caFile() { return _caFile; }
@@ -81,6 +82,7 @@ private:
 	bool _enableCoreDumps = true;
 	std::string _workingDirectory;
 	std::string _logFilePath;
+	std::string _dataPath;
 	std::string _lockFilePath;
 	uint32_t _secureMemorySize = 65536;
 	std::string _caFile;
