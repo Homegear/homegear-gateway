@@ -23,6 +23,8 @@ case $1 in
 
 		uuid=$(cat /proc/sys/kernel/random/uuid)
 		sed -i "s/^#uPnPUDN .*/uPnPUDN = ${uuid}/g" /etc/homegear/gateway.conf
+		password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 64 | head -n 1)
+		sed -i "s/^#configurationPassword .*/configurationPassword = ${password}/g" /etc/homegear/gateway.conf
 
 		if test ! -e /var/lib/homegear-gateway/dh.pem; then
 			if [[ $DIALOG_OUTPUT ]]; then

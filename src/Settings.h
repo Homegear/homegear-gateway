@@ -58,6 +58,8 @@ public:
 	std::string keyPath() { return _keyPath; }
 	std::string dhPath() { return _dhPath; }
 
+	std::string configurationPassword() { return _configurationPassword; }
+
     bool enableUpnp() { return _enableUpnp; }
     std::string upnpIpAddress() { return _upnpIpAddress; }
     std::string upnpUdn() { return _upnpUdn; }
@@ -89,6 +91,8 @@ private:
 	std::string _certPath;
 	std::string _keyPath;
 	std::string _dhPath;
+
+	std::string _configurationPassword;
 
     bool _enableUpnp = false;
     std::string _upnpIpAddress;

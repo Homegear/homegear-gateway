@@ -54,6 +54,8 @@ void Settings::reset()
 	_keyPath = "";
 	_dhPath = "";
 
+	_configurationPassword = "";
+
     _enableUpnp = true;
     _upnpIpAddress = "";
     _upnpUdn = "";
@@ -210,6 +212,11 @@ void Settings::load(std::string filename, std::string executablePath)
 				{
 					_dhPath = value;
 					GD::bl->out.printDebug("Debug: dhPath set to " + _dhPath);
+				}
+				else if(name == "configurationpassword")
+				{
+					_configurationPassword = value;
+					GD::bl->out.printDebug("Debug: configurationPassword was set");
 				}
                 else if(name == "enableupnp")
                 {

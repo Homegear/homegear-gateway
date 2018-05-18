@@ -47,7 +47,6 @@ RpcServer::RpcServer(BaseLib::SharedObjects* bl)
     _binaryRpc.reset(new BaseLib::Rpc::BinaryRpc(bl));
     _rpcDecoder.reset(new BaseLib::Rpc::RpcDecoder(bl, false, false));
     _rpcEncoder.reset(new BaseLib::Rpc::RpcEncoder(bl, true, true));
-    _aes.reset(new BaseLib::Security::Gcrypt(GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_GCM, GCRY_CIPHER_SECURE));
 }
 
 RpcServer::~RpcServer()
@@ -120,6 +119,13 @@ bool RpcServer::start()
         }
         certificateInfo->keyFile = keyFile;
 
+        if(_unconfigured && GD::settings.configurationPassword().empty())
+        {
+            _interface.reset();
+            GD::out.printError("Error: Gateway is unconfigured but configurationPassword is not set in gateway.conf.");
+            return false;
+        }
+
         if(!_unconfigured)
         {
             serverInfo.certificates.emplace("*", certificateInfo);
@@ -191,18 +197,27 @@ BaseLib::PVariable RpcServer::configure(BaseLib::PArray& parameters)
     {
         if(parameters->size() != 1) return BaseLib::Variable::createError(-1, "Wrong parameter count.");
         if(parameters->at(0)->type != BaseLib::VariableType::tString) return BaseLib::Variable::createError(-1, "Parameter is not of type String.");
-        if(parameters->at(0)->stringValue.size() < 128) return BaseLib::Variable::createError(-2, "Data is invalid.");
+        if(parameters->at(0)->stringValue.size() < 128 || parameters->at(0)->stringValue.size() > 100000) return BaseLib::Variable::createError(-2, "Data is invalid.");
 
+        BaseLib::Security::Gcrypt aes(GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_GCM, GCRY_CIPHER_SECURE);
         std::vector<uint8_t> iv = _bl->hf.getUBinary(parameters->at(0)->stringValue.substr(0, 64));
         std::vector<uint8_t> counter(16);
-        _aes->setCounter(counter);
-        _aes->setIv(iv);
+        aes.setCounter(counter);
+        aes.setIv(iv);
+
+        std::vector<uint8_t> key;
+        if(!BaseLib::Security::Hash::sha256(GD::bl->hf.getUBinary(GD::settings.configurationPassword()), key) || key.empty())
+        {
+            GD::out.printError("Error: Could not generate SHA256 of configuration password.");
+            return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
+        }
+        aes.setKey(key);
 
         std::vector<uint8_t> payload = _bl->hf.getUBinary(parameters->at(0)->stringValue.substr(64));
-        if(!_aes->authenticate(payload)) return BaseLib::Variable::createError(-2, "Data is invalid.");
+        if(!aes.authenticate(payload)) return BaseLib::Variable::createError(-2, "Data is invalid.");
 
         std::vector<uint8_t> decryptedData;
-        _aes->decrypt(decryptedData, payload);
+        aes.decrypt(decryptedData, payload);
 
         BaseLib::Rpc::RpcDecoder rpcDecoder(_bl, false, false);
         auto data = rpcDecoder.decodeResponse(decryptedData);
@@ -282,18 +297,28 @@ void RpcServer::packetReceived(int32_t clientId, BaseLib::TcpSocket::TcpPacket p
                 auto parameters = _rpcDecoder->decodeRequest(_binaryRpc->getData(), method);
 
                 BaseLib::PVariable response;
-                if(_unconfigured && method == "configure")
+                if(_unconfigured)
                 {
-                    response = configure(parameters);
-                    std::vector<uint8_t> data;
-                    _rpcEncoder->encodeResponse(response, data);
-                    _tcpServer->sendToClient(clientId, data);
-
-                    if(!response->errorStruct)
+                    if(method == "configure")
                     {
-                        std::lock_guard<std::mutex> maintenanceThreadGuard(_maintenanceThreadMutex);
-                        _bl->threadManager.join(_maintenanceThread);
-                        _bl->threadManager.start(_maintenanceThread, true, &RpcServer::restart, this);
+                        response = configure(parameters);
+                        std::vector<uint8_t> data;
+                        _rpcEncoder->encodeResponse(response, data);
+                        _tcpServer->sendToClient(clientId, data, true);
+
+                        if(!response->errorStruct)
+                        {
+                            std::lock_guard<std::mutex> maintenanceThreadGuard(_maintenanceThreadMutex);
+                            _bl->threadManager.join(_maintenanceThread);
+                            _bl->threadManager.start(_maintenanceThread, true, &RpcServer::restart, this);
+                        }
+                    }
+                    else
+                    {
+                        response = BaseLib::Variable::createError(-1, "Unknown method.");
+                        std::vector<uint8_t> data;
+                        _rpcEncoder->encodeResponse(response, data);
+                        _tcpServer->sendToClient(clientId, data, true);
                     }
                 }
                 else

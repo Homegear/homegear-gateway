@@ -55,7 +55,6 @@ private:
 	std::unique_ptr<BaseLib::Rpc::BinaryRpc> _binaryRpc;
     std::unique_ptr<BaseLib::Rpc::RpcEncoder> _rpcEncoder;
     std::unique_ptr<BaseLib::Rpc::RpcDecoder> _rpcDecoder;
-	std::unique_ptr<BaseLib::Security::Gcrypt> _aes;
 
 	std::mutex _maintenanceThreadMutex;
 	std::thread _maintenanceThread;
