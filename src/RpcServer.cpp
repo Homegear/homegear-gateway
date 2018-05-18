@@ -47,11 +47,13 @@ RpcServer::RpcServer(BaseLib::SharedObjects* bl)
     _binaryRpc.reset(new BaseLib::Rpc::BinaryRpc(bl));
     _rpcDecoder.reset(new BaseLib::Rpc::RpcDecoder(bl, false, false));
     _rpcEncoder.reset(new BaseLib::Rpc::RpcEncoder(bl, true, true));
+    _aes.reset(new BaseLib::Security::Gcrypt(GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_GCM, GCRY_CIPHER_SECURE));
 }
 
 RpcServer::~RpcServer()
 {
-
+    std::lock_guard<std::mutex> maintenanceThreadGuard(_maintenanceThreadMutex);
+    _bl->threadManager.join(_maintenanceThread);
 }
 
 int32_t RpcServer::familyId()
@@ -177,6 +179,74 @@ void RpcServer::stop()
     }
 }
 
+void RpcServer::restart()
+{
+    stop();
+    start();
+}
+
+BaseLib::PVariable RpcServer::configure(BaseLib::PArray& parameters)
+{
+    try
+    {
+        if(parameters->size() != 1) return BaseLib::Variable::createError(-1, "Wrong parameter count.");
+        if(parameters->at(0)->type != BaseLib::VariableType::tString) return BaseLib::Variable::createError(-1, "Parameter is not of type String.");
+        if(parameters->at(0)->stringValue.size() < 128) return BaseLib::Variable::createError(-2, "Data is invalid.");
+
+        std::vector<uint8_t> iv = _bl->hf.getUBinary(parameters->at(0)->stringValue.substr(0, 64));
+        std::vector<uint8_t> counter(16);
+        _aes->setCounter(counter);
+        _aes->setIv(iv);
+
+        std::vector<uint8_t> payload = _bl->hf.getUBinary(parameters->at(0)->stringValue.substr(64));
+        if(!_aes->authenticate(payload)) return BaseLib::Variable::createError(-2, "Data is invalid.");
+
+        std::vector<uint8_t> decryptedData;
+        _aes->decrypt(decryptedData, payload);
+
+        BaseLib::Rpc::RpcDecoder rpcDecoder(_bl, false, false);
+        auto data = rpcDecoder.decodeResponse(decryptedData);
+
+        if(data->type != BaseLib::VariableType::tStruct) return BaseLib::Variable::createError(-1, "Data is not of type Struct.");
+
+        auto dataIterator = data->structValue->find("caCert");
+        if(dataIterator == data->structValue->end()) return BaseLib::Variable::createError(-1, "Data does not contain element \"caCert\".");
+        std::string certPath = GD::settings.dataPath() + "ca.crt";
+        BaseLib::Io::writeFile(certPath, dataIterator->second->stringValue);
+
+        dataIterator = data->structValue->find("gatewayCert");
+        if(dataIterator == data->structValue->end()) return BaseLib::Variable::createError(-1, "Data does not contain element \"gatewayCert\".");
+        certPath = GD::settings.dataPath() + "gateway.crt";
+        BaseLib::Io::writeFile(certPath, dataIterator->second->stringValue);
+
+        dataIterator = data->structValue->find("gatewayKey");
+        if(dataIterator == data->structValue->end()) return BaseLib::Variable::createError(-1, "Data does not contain element \"gatewayKey\".");
+        certPath = GD::settings.dataPath() + "gateway.key";
+        BaseLib::Io::writeFile(certPath, dataIterator->second->stringValue);
+
+        uid_t userId = GD::bl->hf.userId(GD::runAsUser);
+        gid_t groupId = GD::bl->hf.groupId(GD::runAsGroup);
+
+        if(chown(certPath.c_str(), userId, groupId) == -1) GD::out.printWarning("Warning: Could net set owner on " + certPath + ": " + std::string(strerror(errno)));
+        if(chmod(certPath.c_str(), S_IRUSR | S_IWUSR) == -1) GD::out.printWarning("Warning: Could net set permissions on " + certPath + ": " + std::string(strerror(errno)));;
+
+        return std::make_shared<BaseLib::Variable>();
+    }
+    catch(BaseLib::Exception& ex)
+    {
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+    }
+    catch(const std::exception& ex)
+    {
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+    }
+    catch(...)
+    {
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
+    }
+    return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
+}
+
 void RpcServer::newConnection(int32_t clientId, std::string address, uint16_t port)
 {
     try
@@ -203,34 +273,45 @@ void RpcServer::packetReceived(int32_t clientId, BaseLib::TcpSocket::TcpPacket p
 {
     try
     {
-        if(_unconfigured)
+        _binaryRpc->process((char*) packet.data(), packet.size());
+        if(_binaryRpc->isFinished())
         {
-            GD::out.printInfo("Packet received: " + BaseLib::HelperFunctions::getHexString(packet));
-        }
-        else
-        {
-            _binaryRpc->process((char*) packet.data(), packet.size());
-            if(_binaryRpc->isFinished())
+            if(_binaryRpc->getType() == BaseLib::Rpc::BinaryRpc::Type::request)
             {
-                if(_binaryRpc->getType() == BaseLib::Rpc::BinaryRpc::Type::request)
-                {
-                    std::string method;
-                    auto parameters = _rpcDecoder->decodeRequest(_binaryRpc->getData(), method);
+                std::string method;
+                auto parameters = _rpcDecoder->decodeRequest(_binaryRpc->getData(), method);
 
-                    BaseLib::PVariable response = _interface->callMethod(method, parameters);
+                BaseLib::PVariable response;
+                if(_unconfigured && method == "configure")
+                {
+                    response = configure(parameters);
+                    std::vector<uint8_t> data;
+                    _rpcEncoder->encodeResponse(response, data);
+                    _tcpServer->sendToClient(clientId, data);
+
+                    if(!response->errorStruct)
+                    {
+                        std::lock_guard<std::mutex> maintenanceThreadGuard(_maintenanceThreadMutex);
+                        _bl->threadManager.join(_maintenanceThread);
+                        _bl->threadManager.start(_maintenanceThread, true, &RpcServer::restart, this);
+                    }
+                }
+                else
+                {
+                    response = _interface->callMethod(method, parameters);
                     std::vector<uint8_t> data;
                     _rpcEncoder->encodeResponse(response, data);
                     _tcpServer->sendToClient(clientId, data);
                 }
-                else if(_binaryRpc->getType() == BaseLib::Rpc::BinaryRpc::Type::response && _waitForResponse)
-                {
-                    std::unique_lock<std::mutex> requestLock(_requestMutex);
-                    _rpcResponse = _rpcDecoder->decodeResponse(_binaryRpc->getData());
-                    requestLock.unlock();
-                    _requestConditionVariable.notify_all();
-                }
-                _binaryRpc->reset();
             }
+            else if(!_unconfigured && _binaryRpc->getType() == BaseLib::Rpc::BinaryRpc::Type::response && _waitForResponse)
+            {
+                std::unique_lock<std::mutex> requestLock(_requestMutex);
+                _rpcResponse = _rpcDecoder->decodeResponse(_binaryRpc->getData());
+                requestLock.unlock();
+                _requestConditionVariable.notify_all();
+            }
+            _binaryRpc->reset();
         }
     }
     catch(BaseLib::Exception& ex)

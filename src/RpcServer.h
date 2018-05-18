@@ -34,6 +34,8 @@
 #include <homegear-base/BaseLib.h>
 #include "Families/ICommunicationInterface.h"
 
+#include <sys/stat.h>
+
 class RpcServer
 {
 public:
@@ -53,6 +55,10 @@ private:
 	std::unique_ptr<BaseLib::Rpc::BinaryRpc> _binaryRpc;
     std::unique_ptr<BaseLib::Rpc::RpcEncoder> _rpcEncoder;
     std::unique_ptr<BaseLib::Rpc::RpcDecoder> _rpcDecoder;
+	std::unique_ptr<BaseLib::Security::Gcrypt> _aes;
+
+	std::mutex _maintenanceThreadMutex;
+	std::thread _maintenanceThread;
 
 	std::atomic_bool _unconfigured;
 	std::atomic_bool _stopped;
@@ -66,6 +72,10 @@ private:
     BaseLib::PVariable _rpcResponse;
 
     std::unique_ptr<ICommunicationInterface> _interface;
+
+	BaseLib::PVariable configure(BaseLib::PArray& parameters);
+
+	void restart();
 
 	void newConnection(int32_t clientId, std::string address, uint16_t port);
 	void packetReceived(int32_t clientId, BaseLib::TcpSocket::TcpPacket packet);
