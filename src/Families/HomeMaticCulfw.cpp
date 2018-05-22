@@ -35,6 +35,8 @@ HomeMaticCulfw::HomeMaticCulfw(BaseLib::SharedObjects* bl) : ICommunicationInter
 {
     try
     {
+        _familyId = HOMEMATIC_COC_FAMILY_ID;
+
         _updateMode = false;
 
         _localRpcMethods.emplace("sendPacket", std::bind(&HomeMaticCulfw::sendPacket, this, std::placeholders::_1));
@@ -85,7 +87,7 @@ void HomeMaticCulfw::start()
     {
         if(GD::settings.device().empty())
         {
-            GD::out.printError("Error: No device defined for family EnOcean. Please specify it in \"gateway.conf\".");
+            GD::out.printError("Error: No device defined for family HomeMatic BidCoS CUL. Please specify it in \"gateway.conf\".");
             return;
         }
 

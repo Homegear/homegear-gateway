@@ -46,12 +46,15 @@ void Settings::reset()
 	_enableCoreDumps = true;
 	_workingDirectory = _executablePath;
 	_logFilePath = "/var/log/homegear-gateway/";
+    _dataPath = "/var/lib/homegear-gateway/";
 	_lockFilePath = "/var/lock/";
 	_secureMemorySize = 65536;
 	_caFile = "";
 	_certPath = "";
 	_keyPath = "";
 	_dhPath = "";
+
+	_configurationPassword = "";
 
     _enableUpnp = true;
     _upnpIpAddress = "";
@@ -168,6 +171,13 @@ void Settings::load(std::string filename, std::string executablePath)
 					if(_logFilePath.back() != '/') _logFilePath.push_back('/');
 					GD::bl->out.printDebug("Debug: logfilePath set to " + _logFilePath);
 				}
+                else if(name == "datapath")
+                {
+                    _dataPath = value;
+                    if(_dataPath.empty()) _dataPath = "/var/lib/homegear-gateway/";
+                    if(_dataPath.back() != '/') _dataPath.push_back('/');
+                    GD::bl->out.printDebug("Debug: dataPath set to " + _dataPath);
+                }
 				else if(name == "lockfilepath")
 				{
 					_lockFilePath = value;
@@ -202,6 +212,11 @@ void Settings::load(std::string filename, std::string executablePath)
 				{
 					_dhPath = value;
 					GD::bl->out.printDebug("Debug: dhPath set to " + _dhPath);
+				}
+				else if(name == "configurationpassword")
+				{
+					_configurationPassword = value;
+					GD::bl->out.printDebug("Debug: configurationPassword was set");
 				}
                 else if(name == "enableupnp")
                 {
@@ -239,6 +254,21 @@ void Settings::load(std::string filename, std::string executablePath)
 					_gpio2 = BaseLib::Math::getNumber(value);
 					if(_gpio2 < 0) _gpio2 =  -1;
 					GD::bl->out.printDebug("Debug: gpio2 set to " + std::to_string(_gpio2));
+				}
+				else if(name == "oscillatorfrequency")
+				{
+					_oscillatorFrequency = BaseLib::Math::getNumber(value);
+					if(_oscillatorFrequency < 0) _oscillatorFrequency = -1;
+					GD::bl->out.printDebug("Debug: oscillatorFrequency set to " + std::to_string(_oscillatorFrequency));
+				}
+				else if(name == "interruptpin")
+				{
+					int32_t number = BaseLib::Math::getNumber(value);
+					if(number >= 0)
+					{
+						_interruptPin = number;
+						GD::bl->out.printDebug("Debug: interruptPin set to " + std::to_string(_interruptPin));
+					}
 				}
 				else
 				{
