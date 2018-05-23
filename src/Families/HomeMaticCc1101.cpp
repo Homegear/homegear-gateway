@@ -367,7 +367,7 @@ void HomeMaticCc1101::openDevice()
 {
     try
     {
-        if(_fileDescriptor->descriptor != -1) closeDevice();
+        if(_fileDescriptor && _fileDescriptor->descriptor != -1) closeDevice();
 
         _lockfile = GD::bl->settings.lockFilePath() + "LCK.." + GD::settings.device().substr(GD::settings.device().find_last_of('/') + 1);
         int lockfileDescriptor = open(_lockfile.c_str(), O_WRONLY | O_EXCL | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
