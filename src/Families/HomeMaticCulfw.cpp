@@ -43,7 +43,7 @@ HomeMaticCulfw::HomeMaticCulfw(BaseLib::SharedObjects* bl) : ICommunicationInter
         _localRpcMethods.emplace("enableUpdateMode", std::bind(&HomeMaticCulfw::enableUpdateMode, this, std::placeholders::_1));
         _localRpcMethods.emplace("disableUpdateMode", std::bind(&HomeMaticCulfw::disableUpdateMode, this, std::placeholders::_1));
 
-        _gpio.reset(new BaseLib::LowLevel::Gpio(bl));
+        _gpio.reset(new BaseLib::LowLevel::Gpio(bl, GD::settings.gpioPath()));
 
         start();
     }

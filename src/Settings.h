@@ -52,6 +52,7 @@ public:
 	std::string logFilePath() { return _logFilePath; }
 	std::string dataPath() { return _dataPath; }
 	std::string lockFilePath() { return _lockFilePath; }
+    std::string gpioPath() { return _gpioPath; }
 	uint32_t secureMemorySize() { return _secureMemorySize; }
 	std::string caFile() { return _caFile; }
 	std::string certPath() { return _certPath; }
@@ -86,6 +87,7 @@ private:
 	std::string _logFilePath;
 	std::string _dataPath;
 	std::string _lockFilePath;
+    std::string _gpioPath;
 	uint32_t _secureMemorySize = 65536;
 	std::string _caFile;
 	std::string _certPath;

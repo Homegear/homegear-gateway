@@ -43,7 +43,7 @@ HomeMaticCc1101::HomeMaticCc1101(BaseLib::SharedObjects* bl) : ICommunicationInt
         _sendingPending = false;
         _firstPacket = true;
         _updateMode = false;
-        _gpio.reset(new BaseLib::LowLevel::Gpio(bl));
+        _gpio.reset(new BaseLib::LowLevel::Gpio(bl, GD::settings.gpioPath()));
 
         _localRpcMethods.emplace("sendPacket", std::bind(&HomeMaticCc1101::sendPacket, this, std::placeholders::_1));
         _localRpcMethods.emplace("enableUpdateMode", std::bind(&HomeMaticCc1101::enableUpdateMode, this, std::placeholders::_1));

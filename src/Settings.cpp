@@ -48,6 +48,7 @@ void Settings::reset()
 	_logFilePath = "/var/log/homegear-gateway/";
     _dataPath = "/var/lib/homegear-gateway/";
 	_lockFilePath = "/var/lock/";
+	_gpioPath = "/sys/class/gpio/";
 	_secureMemorySize = 65536;
 	_caFile = "";
 	_certPath = "";
@@ -186,6 +187,13 @@ void Settings::load(std::string filename, std::string executablePath)
 					GD::bl->settings.setLockFilePath(_lockFilePath);
 					GD::bl->out.printDebug("Debug: lockfilePath set to " + _lockFilePath);
 				}
+                else if(name == "gpiopath")
+                {
+                    _gpioPath = value;
+                    if(_gpioPath.empty()) _gpioPath = "/sys/class/gpio/";
+                    if(_gpioPath.back() != '/') _gpioPath.push_back('/');
+                    GD::bl->out.printDebug("Debug: gpioPath set to " + _gpioPath);
+                }
 				else if(name == "securememorysize")
 				{
 					_secureMemorySize = BaseLib::Math::getNumber(value);
