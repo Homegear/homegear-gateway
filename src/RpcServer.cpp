@@ -201,9 +201,10 @@ BaseLib::PVariable RpcServer::configure(BaseLib::PArray& parameters)
 
         BaseLib::Security::Gcrypt aes(GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_GCM, GCRY_CIPHER_SECURE);
         std::vector<uint8_t> iv = _bl->hf.getUBinary(parameters->at(0)->stringValue.substr(0, 64));
-        std::vector<uint8_t> counter(16);
-        aes.setCounter(counter);
         aes.setIv(iv);
+
+        std::vector<uint8_t> counter(32);
+        aes.setCounter(counter);
 
         std::vector<uint8_t> key;
         if(!BaseLib::Security::Hash::sha256(GD::bl->hf.getUBinary(GD::settings.configurationPassword()), key) || key.empty())
@@ -246,6 +247,10 @@ BaseLib::PVariable RpcServer::configure(BaseLib::PArray& parameters)
         if(chmod(certPath.c_str(), S_IRUSR | S_IWUSR) == -1) GD::out.printWarning("Warning: Could net set permissions on " + certPath + ": " + std::string(strerror(errno)));;
 
         return std::make_shared<BaseLib::Variable>();
+    }
+    catch(BaseLib::Security::GcryptException& ex)
+    {
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, "Error decrypting data: " + ex.what());
     }
     catch(BaseLib::Exception& ex)
     {
