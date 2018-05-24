@@ -870,7 +870,7 @@ BaseLib::PVariable HomeMaticCc1101::sendPacket(BaseLib::PArray& parameters)
     {
         if(parameters->size() != 2 || parameters->at(1)->type != BaseLib::VariableType::tString || parameters->at(1)->stringValue.empty()) return BaseLib::Variable::createError(-1, "Invalid parameters.");
 
-        if(_fileDescriptor->descriptor == -1 || !_gpio->isOpen(GD::settings.gpio1()) || _stopped) return BaseLib::Variable::createError(-1, "SPI device or GPIO is not open.");
+        if(!_fileDescriptor || _fileDescriptor->descriptor == -1 || !_gpio->isOpen(GD::settings.gpio1()) || _stopped) return BaseLib::Variable::createError(-1, "SPI device or GPIO is not open.");
 
         std::vector<uint8_t> decodedPacket = _bl->hf.getUBinary(parameters->at(1)->stringValue);
         bool burst = decodedPacket.at(2) & 0x10;

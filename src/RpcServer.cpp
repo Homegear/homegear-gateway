@@ -66,6 +66,8 @@ bool RpcServer::start()
 {
     try
     {
+        _unconfigured = false;
+
         if(GD::settings.family().empty())
         {
             GD::out.printError("Error: Setting family in gateway.conf is empty.");
@@ -134,6 +136,7 @@ bool RpcServer::start()
             serverInfo.dhParamFile = dhFile;
             serverInfo.requireClientCert = true;
         }
+        else GD::out.printWarning("Warning: Gateway is not fully configured yet.");
         serverInfo.newConnectionCallback = std::bind(&RpcServer::newConnection, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         serverInfo.packetReceivedCallback = std::bind(&RpcServer::packetReceived, this, std::placeholders::_1, std::placeholders::_2);
 
