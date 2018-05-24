@@ -142,7 +142,7 @@ bool RpcServer::start()
 
         _tcpServer = std::make_shared<BaseLib::TcpSocket>(_bl, serverInfo);
         std::string boundAddress;
-        _tcpServer->startServer(GD::settings.listenAddress(), std::to_string(GD::settings.port()), boundAddress);
+        _tcpServer->startServer(GD::settings.listenAddress(), std::to_string(_unconfigured ? GD::settings.portUnconfigured() : GD::settings.port()), boundAddress);
         _stopped = false;
 
         return true;

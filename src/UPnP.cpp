@@ -304,7 +304,7 @@ void UPnP::setPackets()
 {
 	try
 	{
-        std::string notifyPacketBase = "NOTIFY * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nCACHE-CONTROL: max-age=1800\r\nSERVER: Homegear Gateway " + std::string(VERSION) + "\r\nLOCATION: " + "binrpcs://" + _address + ":" + std::to_string(GD::settings.port()) + "/\r\nHG-FAMILY-ID: " + std::to_string(GD::rpcServer->familyId()) + "\r\nHG-GATEWAY-CONFIGURED: " + (GD::rpcServer->isUnconfigured() ? "0" : "1") + "\r\n";
+        std::string notifyPacketBase = "NOTIFY * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nCACHE-CONTROL: max-age=1800\r\nSERVER: Homegear Gateway " + std::string(VERSION) + "\r\nLOCATION: " + "binrpcs://" + _address + ":" + std::to_string(GD::settings.port()) + "/\r\nHG-FAMILY-ID: " + std::to_string(GD::rpcServer->familyId()) + "\r\nHG-GATEWAY-CONFIGURED: " + (GD::rpcServer->isUnconfigured() ? "0" : "1") + "\r\nHG-GATEWAY-PORT-UNCONFIGURED: " + std::to_string(GD::settings.portUnconfigured()) + "\r\n";
         std::string alivePacketRoot = notifyPacketBase + "NT: upnp:rootdevice\r\nUSN: " + _st + "::upnp:rootdevice\r\nNTS: ssdp:alive\r\n\r\n";
         std::string alivePacketRootUUID = notifyPacketBase + "NT: " + _st + "\r\nUSN: " + _st + "\r\nNTS: ssdp:alive\r\n\r\n";
         std::string alivePacket = notifyPacketBase + "NT: urn:schemas-upnp-org:device:basic:1\r\nUSN: " + _st + "\r\nNTS: ssdp:alive\r\n\r\n";
@@ -319,7 +319,7 @@ void UPnP::setPackets()
         _packets.byebyeRootUUID = std::vector<char>(&byebyePacketRootUUID.at(0), &byebyePacketRootUUID.at(0) + byebyePacketRootUUID.size());
         _packets.byebye = std::vector<char>(&byebyePacket.at(0), &byebyePacket.at(0) + byebyePacket.size());
 
-        std::string okPacketBase = std::string("HTTP/1.1 200 OK\r\nCache-Control: max-age=1800\r\nLocation: ") + "binrpcs://" + _address + ":" + std::to_string(GD::settings.port()) + "/\r\nServer: Homegear Gateway " + std::string(VERSION) + "\r\nHG-Family-ID: " + std::to_string(GD::rpcServer->familyId()) + "\r\nHG-Gateway-Configured: " + (GD::rpcServer->isUnconfigured() ? "0" : "1") + "\r\n";
+        std::string okPacketBase = std::string("HTTP/1.1 200 OK\r\nCache-Control: max-age=1800\r\nLocation: ") + "binrpcs://" + _address + ":" + std::to_string(GD::settings.port()) + "/\r\nServer: Homegear Gateway " + std::string(VERSION) + "\r\nHG-Family-ID: " + std::to_string(GD::rpcServer->familyId()) + "\r\nHG-Gateway-Configured: " + (GD::rpcServer->isUnconfigured() ? "0" : "1") + "\r\nHG-Gateway-Port-Unconfigured: " + std::to_string(GD::settings.portUnconfigured()) + "\r\n";
         std::string okPacketRoot = okPacketBase + "ST: upnp:rootdevice\r\nUSN: " + _st + "::upnp:rootdevice\r\n\r\n";
         std::string okPacketRootUUID = okPacketBase + "ST: " + _st + "\r\nUSN: " + _st + "\r\n\r\n";
         std::string okPacket = okPacketBase + "ST: urn:schemas-upnp-org:device:basic:1\r\nUSN: " + _st + "\r\n\r\n";

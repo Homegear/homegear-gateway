@@ -43,6 +43,7 @@ public:
 
 	std::string listenAddress() { return _listenAddress; }
 	int32_t port() { return _port; }
+    int32_t portUnconfigured() { return _portUnconfigured; }
 	std::string runAsUser() { return _runAsUser; }
 	std::string runAsGroup() { return _runAsGroup; }
 	int32_t debugLevel() { return _debugLevel; }
@@ -78,6 +79,7 @@ private:
 
 	std::string _listenAddress;
 	int32_t _port = 2017;
+    int32_t _portUnconfigured = 2018;
 	std::string _runAsUser;
 	std::string _runAsGroup;
 	int32_t _debugLevel = 3;

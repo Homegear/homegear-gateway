@@ -39,6 +39,7 @@ void Settings::reset()
 {
 	_listenAddress = "::";
 	_port = 2017;
+	_portUnconfigured = 2018;
 	_runAsUser = "";
 	_runAsGroup = "";
 	_debugLevel = 3;
@@ -65,6 +66,8 @@ void Settings::reset()
     _device = "";
 	_gpio1 = -1;
 	_gpio2 = -1;
+    _oscillatorFrequency = -1;
+    _interruptPin = -1;
 }
 
 bool Settings::changed()
@@ -130,6 +133,12 @@ void Settings::load(std::string filename, std::string executablePath)
 					_port = BaseLib::Math::getNumber(value);
 					if(_port < 1 || _port > 65535) _port = 2017;
 					GD::bl->out.printDebug("Debug: port set to " + std::to_string(_port));
+				}
+				else if(name == "portunconfigured")
+				{
+					_portUnconfigured = BaseLib::Math::getNumber(value);
+					if(_portUnconfigured < 1 || _portUnconfigured > 65535) _portUnconfigured = 2018;
+					GD::bl->out.printDebug("Debug: portUnconfigured set to " + std::to_string(_portUnconfigured));
 				}
 				else if(name == "runasuser")
 				{
