@@ -190,6 +190,7 @@ void RpcServer::stop()
 
 void RpcServer::restart()
 {
+    GD::out.printMessage("Restarting server.");
     stop();
     start();
 }
@@ -249,6 +250,8 @@ BaseLib::PVariable RpcServer::configure(BaseLib::PArray& parameters)
 
         if(chown(certPath.c_str(), userId, groupId) == -1) GD::out.printWarning("Warning: Could net set owner on " + certPath + ": " + std::string(strerror(errno)));
         if(chmod(certPath.c_str(), S_IRUSR | S_IWUSR) == -1) GD::out.printWarning("Warning: Could net set permissions on " + certPath + ": " + std::string(strerror(errno)));;
+
+        GD::out.printMessage("Remote configuration was successful.");
 
         return std::make_shared<BaseLib::Variable>();
     }
