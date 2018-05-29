@@ -43,7 +43,7 @@ HomeMaticCc1101::HomeMaticCc1101(BaseLib::SharedObjects* bl) : ICommunicationInt
         _sendingPending = false;
         _firstPacket = true;
         _updateMode = false;
-        _gpio.reset(new BaseLib::LowLevel::Gpio(bl));
+        _gpio.reset(new BaseLib::LowLevel::Gpio(bl, GD::settings.gpioPath()));
 
         _localRpcMethods.emplace("sendPacket", std::bind(&HomeMaticCc1101::sendPacket, this, std::placeholders::_1));
         _localRpcMethods.emplace("enableUpdateMode", std::bind(&HomeMaticCc1101::enableUpdateMode, this, std::placeholders::_1));
@@ -367,7 +367,7 @@ void HomeMaticCc1101::openDevice()
 {
     try
     {
-        if(_fileDescriptor->descriptor != -1) closeDevice();
+        if(_fileDescriptor && _fileDescriptor->descriptor != -1) closeDevice();
 
         _lockfile = GD::bl->settings.lockFilePath() + "LCK.." + GD::settings.device().substr(GD::settings.device().find_last_of('/') + 1);
         int lockfileDescriptor = open(_lockfile.c_str(), O_WRONLY | O_EXCL | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
@@ -870,7 +870,7 @@ BaseLib::PVariable HomeMaticCc1101::sendPacket(BaseLib::PArray& parameters)
     {
         if(parameters->size() != 2 || parameters->at(1)->type != BaseLib::VariableType::tString || parameters->at(1)->stringValue.empty()) return BaseLib::Variable::createError(-1, "Invalid parameters.");
 
-        if(_fileDescriptor->descriptor == -1 || !_gpio->isOpen(GD::settings.gpio1()) || _stopped) return BaseLib::Variable::createError(-1, "SPI device or GPIO is not open.");
+        if(!_fileDescriptor || _fileDescriptor->descriptor == -1 || !_gpio->isOpen(GD::settings.gpio1()) || _stopped) return BaseLib::Variable::createError(-1, "SPI device or GPIO is not open.");
 
         std::vector<uint8_t> decodedPacket = _bl->hf.getUBinary(parameters->at(1)->stringValue);
         bool burst = decodedPacket.at(2) & 0x10;

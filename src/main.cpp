@@ -603,7 +603,7 @@ int main(int argc, char* argv[])
     		else if(arg == "-v")
     		{
     			std::cout << "Homegear Gateway version " << VERSION << std::endl;
-    			std::cout << "Copyright (c) 2013-2017 Sathya Laufer" << std::endl << std::endl;
+    			std::cout << "Copyright (c) 2013-2018 Homegear GmbH" << std::endl << std::endl;
     			exit(0);
     		}
     		else

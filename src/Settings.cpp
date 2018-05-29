@@ -39,6 +39,7 @@ void Settings::reset()
 {
 	_listenAddress = "::";
 	_port = 2017;
+	_portUnconfigured = 2018;
 	_runAsUser = "";
 	_runAsGroup = "";
 	_debugLevel = 3;
@@ -48,6 +49,7 @@ void Settings::reset()
 	_logFilePath = "/var/log/homegear-gateway/";
     _dataPath = "/var/lib/homegear-gateway/";
 	_lockFilePath = "/var/lock/";
+	_gpioPath = "/sys/class/gpio/";
 	_secureMemorySize = 65536;
 	_caFile = "";
 	_certPath = "";
@@ -64,6 +66,8 @@ void Settings::reset()
     _device = "";
 	_gpio1 = -1;
 	_gpio2 = -1;
+    _oscillatorFrequency = -1;
+    _interruptPin = -1;
 }
 
 bool Settings::changed()
@@ -130,6 +134,12 @@ void Settings::load(std::string filename, std::string executablePath)
 					if(_port < 1 || _port > 65535) _port = 2017;
 					GD::bl->out.printDebug("Debug: port set to " + std::to_string(_port));
 				}
+				else if(name == "portunconfigured")
+				{
+					_portUnconfigured = BaseLib::Math::getNumber(value);
+					if(_portUnconfigured < 1 || _portUnconfigured > 65535) _portUnconfigured = 2018;
+					GD::bl->out.printDebug("Debug: portUnconfigured set to " + std::to_string(_portUnconfigured));
+				}
 				else if(name == "runasuser")
 				{
 					_runAsUser = value;
@@ -186,6 +196,13 @@ void Settings::load(std::string filename, std::string executablePath)
 					GD::bl->settings.setLockFilePath(_lockFilePath);
 					GD::bl->out.printDebug("Debug: lockfilePath set to " + _lockFilePath);
 				}
+                else if(name == "gpiopath")
+                {
+                    _gpioPath = value;
+                    if(_gpioPath.empty()) _gpioPath = "/sys/class/gpio/";
+                    if(_gpioPath.back() != '/') _gpioPath.push_back('/');
+                    GD::bl->out.printDebug("Debug: gpioPath set to " + _gpioPath);
+                }
 				else if(name == "securememorysize")
 				{
 					_secureMemorySize = BaseLib::Math::getNumber(value);

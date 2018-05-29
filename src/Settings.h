@@ -43,6 +43,7 @@ public:
 
 	std::string listenAddress() { return _listenAddress; }
 	int32_t port() { return _port; }
+    int32_t portUnconfigured() { return _portUnconfigured; }
 	std::string runAsUser() { return _runAsUser; }
 	std::string runAsGroup() { return _runAsGroup; }
 	int32_t debugLevel() { return _debugLevel; }
@@ -52,6 +53,7 @@ public:
 	std::string logFilePath() { return _logFilePath; }
 	std::string dataPath() { return _dataPath; }
 	std::string lockFilePath() { return _lockFilePath; }
+    std::string gpioPath() { return _gpioPath; }
 	uint32_t secureMemorySize() { return _secureMemorySize; }
 	std::string caFile() { return _caFile; }
 	std::string certPath() { return _certPath; }
@@ -77,6 +79,7 @@ private:
 
 	std::string _listenAddress;
 	int32_t _port = 2017;
+    int32_t _portUnconfigured = 2018;
 	std::string _runAsUser;
 	std::string _runAsGroup;
 	int32_t _debugLevel = 3;
@@ -86,6 +89,7 @@ private:
 	std::string _logFilePath;
 	std::string _dataPath;
 	std::string _lockFilePath;
+    std::string _gpioPath;
 	uint32_t _secureMemorySize = 65536;
 	std::string _caFile;
 	std::string _certPath;

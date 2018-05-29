@@ -66,6 +66,8 @@ bool RpcServer::start()
 {
     try
     {
+        _unconfigured = false;
+
         if(GD::settings.family().empty())
         {
             GD::out.printError("Error: Setting family in gateway.conf is empty.");
@@ -134,12 +136,13 @@ bool RpcServer::start()
             serverInfo.dhParamFile = dhFile;
             serverInfo.requireClientCert = true;
         }
+        else GD::out.printWarning("Warning: Gateway is not fully configured yet.");
         serverInfo.newConnectionCallback = std::bind(&RpcServer::newConnection, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         serverInfo.packetReceivedCallback = std::bind(&RpcServer::packetReceived, this, std::placeholders::_1, std::placeholders::_2);
 
         _tcpServer = std::make_shared<BaseLib::TcpSocket>(_bl, serverInfo);
         std::string boundAddress;
-        _tcpServer->startServer(GD::settings.listenAddress(), std::to_string(GD::settings.port()), boundAddress);
+        _tcpServer->startServer(GD::settings.listenAddress(), std::to_string(_unconfigured ? GD::settings.portUnconfigured() : GD::settings.port()), boundAddress);
         _stopped = false;
 
         return true;
@@ -187,6 +190,7 @@ void RpcServer::stop()
 
 void RpcServer::restart()
 {
+    GD::out.printMessage("Restarting server.");
     stop();
     start();
 }
@@ -200,10 +204,6 @@ BaseLib::PVariable RpcServer::configure(BaseLib::PArray& parameters)
         if(parameters->at(0)->stringValue.size() < 128 || parameters->at(0)->stringValue.size() > 100000) return BaseLib::Variable::createError(-2, "Data is invalid.");
 
         BaseLib::Security::Gcrypt aes(GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_GCM, GCRY_CIPHER_SECURE);
-        std::vector<uint8_t> iv = _bl->hf.getUBinary(parameters->at(0)->stringValue.substr(0, 64));
-        std::vector<uint8_t> counter(16);
-        aes.setCounter(counter);
-        aes.setIv(iv);
 
         std::vector<uint8_t> key;
         if(!BaseLib::Security::Hash::sha256(GD::bl->hf.getUBinary(GD::settings.configurationPassword()), key) || key.empty())
@@ -213,7 +213,13 @@ BaseLib::PVariable RpcServer::configure(BaseLib::PArray& parameters)
         }
         aes.setKey(key);
 
-        std::vector<uint8_t> payload = _bl->hf.getUBinary(parameters->at(0)->stringValue.substr(64));
+        std::vector<uint8_t> iv = _bl->hf.getUBinary(parameters->at(0)->stringValue.substr(0, 24));
+        aes.setIv(iv);
+
+        std::vector<uint8_t> counter(16);
+        aes.setCounter(counter);
+
+        std::vector<uint8_t> payload = _bl->hf.getUBinary(parameters->at(0)->stringValue.substr(24));
         if(!aes.authenticate(payload)) return BaseLib::Variable::createError(-2, "Data is invalid.");
 
         std::vector<uint8_t> decryptedData;
@@ -245,7 +251,13 @@ BaseLib::PVariable RpcServer::configure(BaseLib::PArray& parameters)
         if(chown(certPath.c_str(), userId, groupId) == -1) GD::out.printWarning("Warning: Could net set owner on " + certPath + ": " + std::string(strerror(errno)));
         if(chmod(certPath.c_str(), S_IRUSR | S_IWUSR) == -1) GD::out.printWarning("Warning: Could net set permissions on " + certPath + ": " + std::string(strerror(errno)));;
 
+        GD::out.printMessage("Remote configuration was successful.");
+
         return std::make_shared<BaseLib::Variable>();
+    }
+    catch(BaseLib::Security::GcryptException& ex)
+    {
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, "Error decrypting data: " + ex.what());
     }
     catch(BaseLib::Exception& ex)
     {
