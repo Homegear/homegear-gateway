@@ -303,7 +303,7 @@ void RpcServer::packetReceived(int32_t clientId, BaseLib::TcpSocket::TcpPacket p
         int32_t processedBytes = 0;
         while(processedBytes < (signed)packet.size())
         {
-            processedBytes += _binaryRpc->process((char*) packet.data(), packet.size());
+            processedBytes += _binaryRpc->process((char*) packet.data() + processedBytes, packet.size() - processedBytes);
             if(_binaryRpc->isFinished())
             {
                 if(_binaryRpc->getType() == BaseLib::Rpc::BinaryRpc::Type::request)
