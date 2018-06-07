@@ -193,6 +193,9 @@ void RpcServer::restart()
     GD::out.printMessage("Restarting server.");
     stop();
     start();
+
+    GD::upnp->stop();
+    GD::upnp->start();
 }
 
 BaseLib::PVariable RpcServer::configure(BaseLib::PArray& parameters)
