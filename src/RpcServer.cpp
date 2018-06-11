@@ -191,10 +191,12 @@ void RpcServer::stop()
 void RpcServer::restart()
 {
     GD::out.printMessage("Restarting server.");
+
+    GD::upnp->stop();
+
     stop();
     start();
 
-    GD::upnp->stop();
     GD::upnp->start();
 }
 
@@ -320,6 +322,9 @@ void RpcServer::packetReceived(int32_t clientId, BaseLib::TcpSocket::TcpPacket p
                         if(method == "configure")
                         {
                             response = configure(parameters);
+
+                            if(!response->errorStruct) GD::upnp->stop();
+
                             std::vector<uint8_t> data;
                             _rpcEncoder->encodeResponse(response, data);
                             _tcpServer->sendToClient(clientId, data, true);
