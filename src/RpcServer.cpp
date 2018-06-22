@@ -191,8 +191,13 @@ void RpcServer::stop()
 void RpcServer::restart()
 {
     GD::out.printMessage("Restarting server.");
+
+    GD::upnp->stop();
+
     stop();
     start();
+
+    GD::upnp->start();
 }
 
 BaseLib::PVariable RpcServer::configure(BaseLib::PArray& parameters)
@@ -300,56 +305,68 @@ void RpcServer::packetReceived(int32_t clientId, BaseLib::TcpSocket::TcpPacket p
 {
     try
     {
-        _binaryRpc->process((char*) packet.data(), packet.size());
-        if(_binaryRpc->isFinished())
+        int32_t processedBytes = 0;
+        while(processedBytes < (signed)packet.size())
         {
-            if(_binaryRpc->getType() == BaseLib::Rpc::BinaryRpc::Type::request)
+            processedBytes += _binaryRpc->process((char*) packet.data() + processedBytes, packet.size() - processedBytes);
+            if(_binaryRpc->isFinished())
             {
-                std::string method;
-                auto parameters = _rpcDecoder->decodeRequest(_binaryRpc->getData(), method);
-
-                BaseLib::PVariable response;
-                if(_unconfigured)
+                if(_binaryRpc->getType() == BaseLib::Rpc::BinaryRpc::Type::request)
                 {
-                    if(method == "configure")
-                    {
-                        response = configure(parameters);
-                        std::vector<uint8_t> data;
-                        _rpcEncoder->encodeResponse(response, data);
-                        _tcpServer->sendToClient(clientId, data, true);
+                    std::string method;
+                    auto parameters = _rpcDecoder->decodeRequest(_binaryRpc->getData(), method);
 
-                        if(!response->errorStruct)
+                    BaseLib::PVariable response;
+                    if(_unconfigured)
+                    {
+                        if(method == "configure")
                         {
-                            std::lock_guard<std::mutex> maintenanceThreadGuard(_maintenanceThreadMutex);
-                            _bl->threadManager.join(_maintenanceThread);
-                            _bl->threadManager.start(_maintenanceThread, true, &RpcServer::restart, this);
+                            response = configure(parameters);
+
+                            if(!response->errorStruct) GD::upnp->stop();
+
+                            std::vector<uint8_t> data;
+                            _rpcEncoder->encodeResponse(response, data);
+                            _tcpServer->sendToClient(clientId, data, true);
+
+                            if(!response->errorStruct)
+                            {
+                                std::lock_guard<std::mutex> maintenanceThreadGuard(_maintenanceThreadMutex);
+                                _bl->threadManager.join(_maintenanceThread);
+                                _bl->threadManager.start(_maintenanceThread, true, &RpcServer::restart, this);
+                            }
+                        }
+                        else
+                        {
+                            response = BaseLib::Variable::createError(-1, "Unknown method.");
+                            std::vector<uint8_t> data;
+                            _rpcEncoder->encodeResponse(response, data);
+                            _tcpServer->sendToClient(clientId, data, true);
                         }
                     }
                     else
                     {
-                        response = BaseLib::Variable::createError(-1, "Unknown method.");
+                        response = _interface->callMethod(method, parameters);
                         std::vector<uint8_t> data;
                         _rpcEncoder->encodeResponse(response, data);
-                        _tcpServer->sendToClient(clientId, data, true);
+                        _tcpServer->sendToClient(clientId, data);
                     }
                 }
-                else
+                else if(!_unconfigured && _binaryRpc->getType() == BaseLib::Rpc::BinaryRpc::Type::response && _waitForResponse)
                 {
-                    response = _interface->callMethod(method, parameters);
-                    std::vector<uint8_t> data;
-                    _rpcEncoder->encodeResponse(response, data);
-                    _tcpServer->sendToClient(clientId, data);
+                    std::unique_lock<std::mutex> requestLock(_requestMutex);
+                    _rpcResponse = _rpcDecoder->decodeResponse(_binaryRpc->getData());
+                    requestLock.unlock();
+                    _requestConditionVariable.notify_all();
                 }
+                _binaryRpc->reset();
             }
-            else if(!_unconfigured && _binaryRpc->getType() == BaseLib::Rpc::BinaryRpc::Type::response && _waitForResponse)
-            {
-                std::unique_lock<std::mutex> requestLock(_requestMutex);
-                _rpcResponse = _rpcDecoder->decodeResponse(_binaryRpc->getData());
-                requestLock.unlock();
-                _requestConditionVariable.notify_all();
-            }
-            _binaryRpc->reset();
         }
+    }
+    catch(BaseLib::Rpc::BinaryRpcException& ex)
+    {
+        _binaryRpc->reset();
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, "Error processing packet: " + ex.what());
     }
     catch(BaseLib::Exception& ex)
     {
