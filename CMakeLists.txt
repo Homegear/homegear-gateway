@@ -20,6 +20,8 @@ set(SOURCE_FILES
         src/Families/HomeMaticCulfw.h
         src/Families/ICommunicationInterface.cpp
         src/Families/ICommunicationInterface.h
+        src/Families/ZWave.cpp
+        src/Families/ZWave.h
         src/UPnP.cpp
         src/UPnP.h)
 
