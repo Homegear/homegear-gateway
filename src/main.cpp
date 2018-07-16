@@ -358,6 +358,22 @@ void startUp()
             }
         }
 
+		//{{{ Export GPIOs
+		if(getuid() == 0 && (GD::settings.gpio1() != -1 || GD::settings.gpio2() != -1))
+		{
+			std::vector<uint32_t> gpios;
+			gpios.reserve(2);
+			if(GD::settings.gpio1() != -1) gpios.push_back(GD::settings.gpio1());
+			if(GD::settings.gpio2() != -1) gpios.push_back(GD::settings.gpio2());
+			if(!gpios.empty())
+			{
+				BaseLib::LowLevel::Gpio gpio(GD::bl.get(), GD::settings.gpioPath());
+				if(GD::bl->userId != 0 && GD::bl->groupId != 0) gpio.setup(GD::bl->userId, GD::bl->groupId, true, gpios);
+				else gpio.setup(0, 0, false, gpios);
+			}
+		}
+		//}}}
+
     	if(getuid() == 0 && !GD::runAsUser.empty() && !GD::runAsGroup.empty())
     	{
 			if(GD::bl->userId == 0 || GD::bl->groupId == 0)
@@ -365,6 +381,7 @@ void startUp()
 				GD::out.printCritical("Could not drop privileges. User name or group name is not valid.");
 				exitProgram(1);
 			}
+
 			GD::out.printInfo("Info: Dropping privileges to user " + GD::runAsUser + " (" + std::to_string(GD::bl->userId) + ") and group " + GD::runAsGroup + " (" + std::to_string(GD::bl->groupId) + ")");
 
 			int result = -1;
