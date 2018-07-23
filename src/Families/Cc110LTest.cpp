@@ -334,7 +334,45 @@ void Cc110LTest::txThread()
     {
         while(!_stopTxThread)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            if(!_fileDescriptor || _fileDescriptor->descriptor == -1 || !_gpio->isOpen(GD::settings.gpio1()) || _stopped)
+            {
+                GD::out.printError("SPI device or GPIO is not open.");
+                return;
+            }
+
+            std::vector<uint8_t> encodedPacket;
+            encodedPacket.resize(61, 0xFF);
+            encodedPacket.at(0) = 60;
+
+            int64_t timeBeforeLock = BaseLib::HelperFunctions::getTime();
+            _sendingPending = true;
+            if(!_txMutex.try_lock_for(std::chrono::milliseconds(10000)))
+            {
+                GD::out.printCritical("Critical: Could not acquire lock for sending packet. This should never happen. Please report this error.");
+                _txMutex.unlock();
+                if(!_txMutex.try_lock_for(std::chrono::milliseconds(100)))
+                {
+                    _sendingPending = false;
+                    GD::out.printError("Could not acquire lock for sending packet.");
+                }
+            }
+            _sendingPending = false;
+            if(_stopCallbackThread || _fileDescriptor->descriptor == -1 || !_gpio->isOpen(GD::settings.gpio1()) || _stopped)
+            {
+                _txMutex.unlock();
+                GD::out.printError("SPI device or GPIO is not open.");
+            }
+            _sending = true;
+            sendCommandStrobe(CommandStrobes::Enum::SIDLE);
+            sendCommandStrobe(CommandStrobes::Enum::SFTX);
+            if(BaseLib::HelperFunctions::getTime() - timeBeforeLock > 100)
+            {
+                GD::out.printWarning("Warning: Timing problem. Sending took more than 100ms. Do you have enough system resources?");
+            }
+            writeRegisters(Registers::Enum::FIFO, encodedPacket);
+            sendCommandStrobe(CommandStrobes::Enum::STX);
+
+            //Unlocking of _txMutex takes place in mainThread
         }
     }
     catch(const std::exception& ex)

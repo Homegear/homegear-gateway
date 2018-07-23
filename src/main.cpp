@@ -46,6 +46,7 @@ void startUp();
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
 
 bool _startAsDaemon = false;
+bool _txTestMode = false;
 std::mutex _shuttingDownMutex;
 std::atomic_bool _startUpComplete;
 std::atomic_bool _shutdownQueued;
@@ -514,6 +515,11 @@ void startUp()
 			GD::out.printError("Error: A core file exists in Homegear Gateway's working directory (\"" + GD::settings.workingDirectory() + "core" + "\"). Please send this file to the Homegear team including information about your system (Linux distribution, CPU architecture), the Homegear Gateway version, the current log files and information what might've caused the error.");
 		}
 
+        if(_txTestMode)
+        {
+            GD::rpcServer->txTest();
+        }
+
        	while(true) std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
 	catch(const std::exception& ex)
@@ -617,6 +623,10 @@ int main(int argc, char* argv[])
     		{
     			_startAsDaemon = true;
     		}
+            else if(arg == "--txtest")
+            {
+                _txTestMode = true;
+            }
     		else if(arg == "-v")
     		{
     			std::cout << "Homegear Gateway version " << VERSION << std::endl;

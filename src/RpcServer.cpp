@@ -427,3 +427,25 @@ BaseLib::PVariable RpcServer::invoke(std::string methodName, BaseLib::PArray& pa
     }
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
 }
+
+void RpcServer::txTest()
+{
+    try
+    {
+        std::string method = "txTest";
+        auto parameters = std::make_shared<BaseLib::Array>();
+        _interface->callMethod(method, parameters);
+    }
+    catch(const std::exception& ex)
+    {
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+    }
+    catch(BaseLib::Exception& ex)
+    {
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+    }
+    catch(...)
+    {
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
+    }
+}
