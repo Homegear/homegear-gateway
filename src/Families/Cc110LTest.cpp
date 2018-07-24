@@ -47,6 +47,7 @@ Cc110LTest::Cc110LTest(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl)
         _gpio.reset(new BaseLib::LowLevel::Gpio(bl, GD::settings.gpioPath()));
 
         _localRpcMethods.emplace("sendPacket", std::bind(&Cc110LTest::sendPacket, this, std::placeholders::_1));
+        _localRpcMethods.emplace("txTest", std::bind(&Cc110LTest::startTx, this, std::placeholders::_1));
         _localRpcMethods.emplace("startTx", std::bind(&Cc110LTest::startTx, this, std::placeholders::_1));
         _localRpcMethods.emplace("stopTx", std::bind(&Cc110LTest::stopTx, this, std::placeholders::_1));
 
