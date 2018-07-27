@@ -12,6 +12,8 @@ set(SOURCE_FILES
         src/Settings.cpp
         src/Settings.h
         config.h
+        src/Families/Cc110LTest.cpp
+        src/Families/Cc110LTest.h
         src/Families/EnOcean.cpp
         src/Families/EnOcean.h
         src/Families/HomeMaticCc1101.cpp
@@ -20,6 +22,8 @@ set(SOURCE_FILES
         src/Families/HomeMaticCulfw.h
         src/Families/ICommunicationInterface.cpp
         src/Families/ICommunicationInterface.h
+        src/Families/ZWave.cpp
+        src/Families/ZWave.h
         src/UPnP.cpp
         src/UPnP.h)
 

@@ -48,6 +48,8 @@ public:
 	bool start();
 	void stop();
     BaseLib::PVariable invoke(std::string methodName, BaseLib::PArray& parameters);
+
+	void txTest();
 private:
 	BaseLib::SharedObjects* _bl = nullptr;
 

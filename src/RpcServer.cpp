@@ -30,6 +30,7 @@
 
 #include "RpcServer.h"
 #include "GD.h"
+#include "Families/Cc110LTest.h"
 #include "Families/EnOcean.h"
 #include "Families/HomeMaticCulfw.h"
 #include "Families/HomeMaticCc1101.h"
@@ -75,7 +76,8 @@ bool RpcServer::start()
             return false;
         }
 
-        if(GD::settings.family() == "enocean") _interface = std::unique_ptr<EnOcean>(new EnOcean(_bl));
+        if(GD::settings.family() == "cc110ltest") _interface = std::unique_ptr<Cc110LTest>(new Cc110LTest(_bl));
+        else if(GD::settings.family() == "enocean") _interface = std::unique_ptr<EnOcean>(new EnOcean(_bl));
         else if(GD::settings.family() == "homematicculfw") _interface = std::unique_ptr<HomeMaticCulfw>(new HomeMaticCulfw(_bl));
         else if(GD::settings.family() == "homematiccc1101") _interface = std::unique_ptr<HomeMaticCc1101>(new HomeMaticCc1101(_bl));
 	else if(GD::settings.family() == "zwave") _interface = std::unique_ptr<ZWave>(new ZWave(_bl));
@@ -424,4 +426,26 @@ BaseLib::PVariable RpcServer::invoke(std::string methodName, BaseLib::PArray& pa
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
+}
+
+void RpcServer::txTest()
+{
+    try
+    {
+        std::string method = "txTest";
+        auto parameters = std::make_shared<BaseLib::Array>();
+        _interface->callMethod(method, parameters);
+    }
+    catch(const std::exception& ex)
+    {
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+    }
+    catch(BaseLib::Exception& ex)
+    {
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+    }
+    catch(...)
+    {
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
+    }
 }

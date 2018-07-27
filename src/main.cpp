@@ -46,6 +46,7 @@ void startUp();
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
 
 bool _startAsDaemon = false;
+bool _txTestMode = false;
 std::mutex _shuttingDownMutex;
 std::atomic_bool _startUpComplete;
 std::atomic_bool _shutdownQueued;
@@ -358,6 +359,22 @@ void startUp()
             }
         }
 
+		//{{{ Export GPIOs
+		if(getuid() == 0 && (GD::settings.gpio1() != -1 || GD::settings.gpio2() != -1))
+		{
+			std::vector<uint32_t> gpios;
+			gpios.reserve(2);
+			if(GD::settings.gpio1() != -1) gpios.push_back(GD::settings.gpio1());
+			if(GD::settings.gpio2() != -1) gpios.push_back(GD::settings.gpio2());
+			if(!gpios.empty())
+			{
+				BaseLib::LowLevel::Gpio gpio(GD::bl.get(), GD::settings.gpioPath());
+				if(GD::bl->userId != 0 && GD::bl->groupId != 0) gpio.setup(GD::bl->userId, GD::bl->groupId, true, gpios);
+				else gpio.setup(0, 0, false, gpios);
+			}
+		}
+		//}}}
+
     	if(getuid() == 0 && !GD::runAsUser.empty() && !GD::runAsGroup.empty())
     	{
 			if(GD::bl->userId == 0 || GD::bl->groupId == 0)
@@ -365,6 +382,7 @@ void startUp()
 				GD::out.printCritical("Could not drop privileges. User name or group name is not valid.");
 				exitProgram(1);
 			}
+
 			GD::out.printInfo("Info: Dropping privileges to user " + GD::runAsUser + " (" + std::to_string(GD::bl->userId) + ") and group " + GD::runAsGroup + " (" + std::to_string(GD::bl->groupId) + ")");
 
 			int result = -1;
@@ -497,6 +515,11 @@ void startUp()
 			GD::out.printError("Error: A core file exists in Homegear Gateway's working directory (\"" + GD::settings.workingDirectory() + "core" + "\"). Please send this file to the Homegear team including information about your system (Linux distribution, CPU architecture), the Homegear Gateway version, the current log files and information what might've caused the error.");
 		}
 
+        if(_txTestMode)
+        {
+            GD::rpcServer->txTest();
+        }
+
        	while(true) std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
 	catch(const std::exception& ex)
@@ -600,6 +623,10 @@ int main(int argc, char* argv[])
     		{
     			_startAsDaemon = true;
     		}
+            else if(arg == "--txtest")
+            {
+                _txTestMode = true;
+            }
     		else if(arg == "-v")
     		{
     			std::cout << "Homegear Gateway version " << VERSION << std::endl;
