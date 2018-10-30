@@ -32,7 +32,7 @@
 #include "ZWave.h"
 
 
-ZWave::ZWave(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl), _stopCallbackThread(false), _stopped(true), _tryCount(30), _emptyReadBuffers(true)
+ZWave::ZWave(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl), _stopCallbackThread(false), _stopped(true), _tryCount(30), _emptyReadBuffers(true), lastSOFtime(0)
 {
     try
     {
@@ -315,10 +315,13 @@ void ZWave::listen()
                 }
                 else if(1 == result)
                 {
+                    const int64_t curTime = BaseLib::HelperFunctions::getTime();
+                    if (curTime - lastSOFtime < 1500) continue;
+
                     if(!data.empty())
                     {
                         GD::out.printWarning("Warning: Incomplete packet received: " + BaseLib::HelperFunctions::getHexString(data));
-                        sendNack();
+                        //sendNack();
                     }
                     packetSize = 0;
                     data.clear();
@@ -342,10 +345,11 @@ void ZWave::listen()
                     {
                         GD::out.printWarning("Warning: Unknown start byte received: " + BaseLib::HelperFunctions::getHexString(byte));
 
-                        sendNack();
+                        //sendNack();
 
                         continue;
                     }
+                    lastSOFtime = BaseLib::HelperFunctions::getTime();
                 }
                 data.push_back(byte);
 
@@ -358,7 +362,7 @@ void ZWave::listen()
 
                         data.clear();
 
-                        sendNack();
+                        //sendNack();
 
                         continue;
                     }

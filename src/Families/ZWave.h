@@ -101,6 +101,8 @@ private:
     std::atomic_int _tryCount;
     std::atomic_bool _emptyReadBuffers;
 
+    int64_t lastSOFtime;
+
     void start();
     void stop();
     void reconnect();
