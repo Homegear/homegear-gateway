@@ -318,13 +318,18 @@ void ZWave::listen()
                     const int64_t curTime = BaseLib::HelperFunctions::getTime();
                     if (curTime - lastSOFtime < 1500) continue;
 
+                    packetSize = 0;
+
                     if(!data.empty())
                     {
                         GD::out.printWarning("Warning: Incomplete packet received: " + BaseLib::HelperFunctions::getHexString(data));
                         //sendNack();
+                        data.clear();
+
+                        data.push_back((uint8_t)ZWaveResponseCodes::NACK);
+                        _processRawPacket(data);
+                        data.clear();
                     }
-                    packetSize = 0;
-                    data.clear();
 
                     continue;
                 }
@@ -337,15 +342,17 @@ void ZWave::listen()
 
                         _processRawPacket(data);
 
-                        packetSize = 0;
                         data.clear();
                         continue;
                     }
-                    else if(/*byte != 0x00 &&*/ byte != (uint8_t)ZWaveResponseCodes::SOF)
+                    else if(byte != (uint8_t)ZWaveResponseCodes::SOF)
                     {
                         GD::out.printWarning("Warning: Unknown start byte received: " + BaseLib::HelperFunctions::getHexString(byte));
 
                         //sendNack();
+                        data.push_back((uint8_t)ZWaveResponseCodes::NACK);
+                        _processRawPacket(data);
+                        data.clear();
 
                         continue;
                     }
@@ -364,6 +371,10 @@ void ZWave::listen()
 
                         //sendNack();
 
+                        data.push_back((uint8_t)ZWaveResponseCodes::NACK);
+                        _processRawPacket(data);
+                        data.clear();
+
                         continue;
                     }
                     packetSize += 2;
@@ -378,6 +389,11 @@ void ZWave::listen()
                         packetSize = 0;
                         data.clear();
                         sendNack();
+
+                        data.push_back((uint8_t)ZWaveResponseCodes::NACK);
+                        _processRawPacket(data);
+                        data.clear();
+
                         continue;
                     }
 
