@@ -236,7 +236,6 @@ void ZWave::sendCan()
 
 void ZWave::EmptyReadBuffers(int tryCount)
 {
-    int32_t result = 0;
     char byte = 0;
     int cnt = 0;
 
@@ -246,10 +245,10 @@ void ZWave::EmptyReadBuffers(int tryCount)
     do
     {
         //Clear buffer, otherwise the address response cannot be sent by the module if the buffer is full.
-        result = _serial->readChar(byte, 1000000);
+        _serial->readChar(byte, 1000000);
         ++cnt;
     }
-    while(result == 0 && cnt < tryCount && !_stopCallbackThread);
+    while(cnt < tryCount && !_stopCallbackThread);
 }
 
 void ZWave::listen()
