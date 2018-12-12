@@ -12,6 +12,6 @@ TimeoutSec=300
 LimitRTPRIO=100
 ExecStart=/usr/bin/homegear-gateway -u homegear -g homegear -p /var/run/homegear/homegear-gateway.pid
 ExecReload=/bin/kill -HUP $MAINPID
-Restart=on-failure
+Restart=always
 TasksMax=infinity
 LimitCORE=infinity
