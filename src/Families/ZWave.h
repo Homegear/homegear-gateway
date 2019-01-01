@@ -120,40 +120,6 @@ private:
 
     static uint8_t getCrc8(const std::vector<uint8_t>& packet);
 
-    static uint8_t function(const std::vector<uint8_t>& data)
-    {
-        return data.size() > 3 ? data.at(3) : 0;
-    }
-
-    static bool CmdFunction(const std::vector<uint8_t>& data)
-    {
-        uint8_t func = function(data);
-
-        return func == 0x13 || func == 0x04 || func == 0xA8;
-    }
-
-    static unsigned int CommandIndex(const std::vector<uint8_t>& data)
-    {
-        unsigned int pos = 6;
-        if (0xA8 == function(data)) pos = 8;
-        else if (0x04  == function(data)) pos = 7;
-
-        return pos;
-    }
-
-    static uint8_t GetNodeID(const std::vector<uint8_t>& data)
-    {
-        const uint8_t funcId = function(data);
-
-        if (0xA8 == funcId && data.size() > 6) return data.at(6);
-        else if ((0x04  == funcId || 0x49 == funcId) && data.size() > 5) return data.at(5);
-        else if (data.size() > 4) return data.at(4);
-
-        return 0;
-    }
-
-
-
 //{{{ RPC methods
     BaseLib::PVariable sendPacket(BaseLib::PArray& parameters);
     BaseLib::PVariable emptyReadBuffers(BaseLib::PArray& parameters);
