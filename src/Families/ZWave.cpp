@@ -397,21 +397,7 @@ void ZWave::listen()
                         continue;
                     }
 
-                    if (CmdFunction(data))
-                    {
-                        const unsigned int pos = CommandIndex(data);
-                        const uint8_t nodeID = GetNodeID(data);
-
-                        if (pos > 0 && nodeID > 0 && data.size() >= pos + 2)
-                        {
-                            if (!IsSecurityEncapsulation(data[pos], data[pos + 1])) // the ACK/NACK sending is the responsibility of processPacket if the packet is encrypted
-                                sendAck();
-                        }
-                        else
-                            sendAck();
-                    }
-                    else
-                        sendAck();
+                    sendAck();
 
                     packetSize = 0;
 

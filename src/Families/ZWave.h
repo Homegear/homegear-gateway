@@ -120,11 +120,6 @@ private:
 
     static uint8_t getCrc8(const std::vector<uint8_t>& packet);
 
-    static bool IsSecurityEncapsulation(uint8_t codecls, uint8_t codecmd)
-    {
-        return (0x98 == codecls && (0x81 == codecmd || 0xC1 == codecmd)) || (0x9F == codecls && 0x03 == codecmd);
-    }
-
     static uint8_t function(const std::vector<uint8_t>& data)
     {
         return data.size() > 3 ? data.at(3) : 0;
