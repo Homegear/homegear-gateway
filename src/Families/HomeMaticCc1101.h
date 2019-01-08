@@ -31,6 +31,8 @@
 #ifndef HOMEGEAR_GATEWAY_HOMEMATIC_CC1101_H
 #define HOMEGEAR_GATEWAY_HOMEMATIC_CC1101_H
 
+#ifdef SPISUPPORT
+
 #include "ICommunicationInterface.h"
 
 #define HOMEMATIC_CC1101_FAMILY_ID 0
@@ -221,4 +223,5 @@ private:
 //}}}
 };
 
+#endif
 #endif

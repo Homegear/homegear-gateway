@@ -29,6 +29,9 @@
 */
 
 #include "Cc110LTest.h"
+
+#ifdef SPISUPPORT
+
 #include "../GD.h"
 
 Cc110LTest::Cc110LTest(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl)
@@ -1172,3 +1175,5 @@ BaseLib::PVariable Cc110LTest::stopTx(BaseLib::PArray& parameters)
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
 }
 //}}}
+
+#endif

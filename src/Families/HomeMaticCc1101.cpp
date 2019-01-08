@@ -29,6 +29,7 @@
 */
 
 #include "HomeMaticCc1101.h"
+#ifdef SPISUPPORT
 #include "../GD.h"
 
 HomeMaticCc1101::HomeMaticCc1101(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl)
@@ -1131,3 +1132,5 @@ BaseLib::PVariable HomeMaticCc1101::disableUpdateMode(BaseLib::PArray& parameter
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
 }
 //}}}
+
+#endif
