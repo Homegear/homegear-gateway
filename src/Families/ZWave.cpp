@@ -32,7 +32,7 @@
 #include "ZWave.h"
 
 
-ZWave::ZWave(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl), _stopCallbackThread(false), _stopped(true), _tryCount(30), _emptyReadBuffers(true)
+ZWave::ZWave(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl), _stopCallbackThread(false), _stopped(true), _tryCount(30), _emptyReadBuffers(true), lastSOFtime(0)
 {
     try
     {
@@ -236,9 +236,9 @@ void ZWave::sendCan()
 
 void ZWave::EmptyReadBuffers(int tryCount)
 {
-    int32_t result = 0;
     char byte = 0;
     int cnt = 0;
+    int32_t result = 0;
 
     if (_stopCallbackThread)
         return;
@@ -246,10 +246,10 @@ void ZWave::EmptyReadBuffers(int tryCount)
     do
     {
         //Clear buffer, otherwise the address response cannot be sent by the module if the buffer is full.
-        result = _serial->readChar(byte, 1000000);
+        result = _serial->readChar(byte, 100000);
         ++cnt;
     }
-    while(result == 0 && cnt < tryCount && !_stopCallbackThread);
+    while(0 == result && cnt < tryCount && !_stopCallbackThread);
 }
 
 void ZWave::listen()
@@ -315,13 +315,21 @@ void ZWave::listen()
                 }
                 else if(1 == result)
                 {
+                    const int64_t curTime = BaseLib::HelperFunctions::getTime();
+                    if (curTime - lastSOFtime < 1500) continue;
+
+                    packetSize = 0;
+
                     if(!data.empty())
                     {
                         GD::out.printWarning("Warning: Incomplete packet received: " + BaseLib::HelperFunctions::getHexString(data));
-                        sendNack();
+                        //sendNack();
+                        data.clear();
+
+                        data.push_back((uint8_t)ZWaveResponseCodes::NACK);
+                        _processRawPacket(data);
+                        data.clear();
                     }
-                    packetSize = 0;
-                    data.clear();
 
                     continue;
                 }
@@ -334,18 +342,21 @@ void ZWave::listen()
 
                         _processRawPacket(data);
 
-                        packetSize = 0;
                         data.clear();
                         continue;
                     }
-                    else if(/*byte != 0x00 &&*/ byte != (uint8_t)ZWaveResponseCodes::SOF)
+                    else if(byte != (uint8_t)ZWaveResponseCodes::SOF)
                     {
                         GD::out.printWarning("Warning: Unknown start byte received: " + BaseLib::HelperFunctions::getHexString(byte));
 
-                        sendNack();
+                        //sendNack();
+                        data.push_back((uint8_t)ZWaveResponseCodes::NACK);
+                        _processRawPacket(data);
+                        data.clear();
 
                         continue;
                     }
+                    lastSOFtime = BaseLib::HelperFunctions::getTime();
                 }
                 data.push_back(byte);
 
@@ -358,7 +369,11 @@ void ZWave::listen()
 
                         data.clear();
 
-                        sendNack();
+                        //sendNack();
+
+                        data.push_back((uint8_t)ZWaveResponseCodes::NACK);
+                        _processRawPacket(data);
+                        data.clear();
 
                         continue;
                     }
@@ -374,24 +389,15 @@ void ZWave::listen()
                         packetSize = 0;
                         data.clear();
                         sendNack();
+
+                        data.push_back((uint8_t)ZWaveResponseCodes::NACK);
+                        _processRawPacket(data);
+                        data.clear();
+
                         continue;
                     }
 
-                    if (CmdFunction(data))
-                    {
-                        const unsigned int pos = CommandIndex(data);
-                        const uint8_t nodeID = GetNodeID(data);
-
-                        if (pos > 0 && nodeID > 0 && data.size() >= pos + 2)
-                        {
-                            if (!IsSecurityEncapsulation(data[pos], data[pos + 1])) // the ACK/NACK sending is the responsibility of processPacket if the packet is encrypted
-                                sendAck();
-                        }
-                        else
-                            sendAck();
-                    }
-                    else
-                        sendAck();
+                    sendAck();
 
                     packetSize = 0;
 
