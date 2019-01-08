@@ -66,4 +66,9 @@ case $host_os in
         ;;
 esac
 
+AC_ARG_WITH([spi], [AS_HELP_STRING([--without-spi], [Compile without SPI support (disables all SPI interfaces)])], [with_spi=no], [])
+AS_IF([test "x$with_spi" != "xno"], [
+    CPPFLAGS="$CPPFLAGS -DSPISUPPORT"
+    ])
+
 AC_OUTPUT(Makefile src/Makefile)
