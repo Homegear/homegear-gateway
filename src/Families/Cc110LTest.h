@@ -31,6 +31,8 @@
 #ifndef HOMEGEAR_GATEWAY_CC110L_TEST_H
 #define HOMEGEAR_GATEWAY_CC110L_TEST_H
 
+#ifdef SPISUPPORT
+
 #include "ICommunicationInterface.h"
 
 #define CC110L_TEST_FAMILY_ID 0
@@ -225,4 +227,5 @@ private:
 //}}}
 };
 
+#endif
 #endif
