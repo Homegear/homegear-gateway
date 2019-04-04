@@ -22,6 +22,10 @@ set(SOURCE_FILES
         src/Families/HomeMaticCulfw.h
         src/Families/ICommunicationInterface.cpp
         src/Families/ICommunicationInterface.h
+        src/Families/MaxCc1101.cpp
+        src/Families/MaxCc1101.h
+        src/Families/MaxCulfw.cpp
+        src/Families/MaxCulfw.h
         src/Families/ZWave.cpp
         src/Families/ZWave.h
         src/UPnP.cpp
