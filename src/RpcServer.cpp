@@ -32,9 +32,11 @@
 #include "GD.h"
 #include "Families/EnOcean.h"
 #include "Families/HomeMaticCulfw.h"
+#include "Families/MaxCulfw.h"
 #ifdef SPISUPPORT
 #include "Families/Cc110LTest.h"
 #include "Families/HomeMaticCc1101.h"
+#include "Families/MaxCc1101.h"
 #endif
 #include "Families/ZWave.h"
 
@@ -80,11 +82,13 @@ bool RpcServer::start()
 
         if(GD::settings.family() == "enocean") _interface = std::unique_ptr<EnOcean>(new EnOcean(_bl));
         else if(GD::settings.family() == "homematicculfw") _interface = std::unique_ptr<HomeMaticCulfw>(new HomeMaticCulfw(_bl));
+        else if(GD::settings.family() == "maxculfw") _interface = std::unique_ptr<HomeMaticCulfw>(new HomeMaticCulfw(_bl));
+        else if(GD::settings.family() == "zwave") _interface = std::unique_ptr<ZWave>(new ZWave(_bl));
 #ifdef SPISUPPORT
         else if(GD::settings.family() == "cc110ltest") _interface = std::unique_ptr<Cc110LTest>(new Cc110LTest(_bl));
         else if(GD::settings.family() == "homematiccc1101") _interface = std::unique_ptr<HomeMaticCc1101>(new HomeMaticCc1101(_bl));
+        else if(GD::settings.family() == "maxcc1101") _interface = std::unique_ptr<HomeMaticCc1101>(new HomeMaticCc1101(_bl));
 #endif
-        else if(GD::settings.family() == "zwave") _interface = std::unique_ptr<ZWave>(new ZWave(_bl));
 
         if(!_interface)
         {
