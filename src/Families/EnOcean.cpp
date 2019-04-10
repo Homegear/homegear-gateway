@@ -172,7 +172,7 @@ void EnOcean::getResponse(uint8_t packetType, std::vector<uint8_t>& requestPacke
         }
         catch(BaseLib::SocketOperationException ex)
         {
-            GD::out.printError("Error sending packet: " + ex.what());
+            GD::out.printError("Error sending packet: " + std::string(ex.what()));
             return;
         }
 

@@ -274,7 +274,7 @@ BaseLib::PVariable RpcServer::configure(BaseLib::PArray& parameters)
     }
     catch(BaseLib::Security::GcryptException& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, "Error decrypting data: " + ex.what());
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, "Error decrypting data: " + std::string(ex.what()));
     }
     catch(BaseLib::Exception& ex)
     {
@@ -378,7 +378,7 @@ void RpcServer::packetReceived(int32_t clientId, BaseLib::TcpSocket::TcpPacket p
     catch(BaseLib::Rpc::BinaryRpcException& ex)
     {
         _binaryRpc->reset();
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, "Error processing packet: " + ex.what());
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, "Error processing packet: " + std::string(ex.what()));
     }
     catch(BaseLib::Exception& ex)
     {
