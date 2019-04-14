@@ -30,6 +30,8 @@
 
 #include "GD.h"
 
+#include <iostream>
+
 #include <malloc.h>
 #include <sys/prctl.h> //For function prctl
 #include <sys/sysctl.h> //For BSD systems
