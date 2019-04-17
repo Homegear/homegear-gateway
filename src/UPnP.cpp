@@ -38,17 +38,9 @@ UPnP::UPnP()
 		_stopServer = true;
 		_serverSocketDescriptor.reset(new BaseLib::FileDescriptor());
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -58,17 +50,9 @@ UPnP::~UPnP()
 	{
 		stop();
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -97,17 +81,9 @@ void UPnP::start()
 		GD::bl->threadManager.start(_listenThread, true, &UPnP::listen, this);
 		sendNotify();
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -120,17 +96,9 @@ void UPnP::stop()
 		GD::bl->threadManager.join(_listenThread);
 		sendByebye();
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -150,17 +118,9 @@ void UPnP::getAddress()
 		}
 		else _address = GD::settings.upnpIpAddress();
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -226,31 +186,15 @@ void UPnP::listen()
 				http.process(buffer, bytesReceived, false);
 				if(http.isFinished()) processPacket(http);
 			}
-            catch(BaseLib::Exception& ex)
-            {
-                GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-            }
             catch(const std::exception& ex)
             {
                 GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
             }
-            catch(...)
-            {
-                GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-            }
 		}
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 	GD::bl->fileDescriptorManager.shutdown(_serverSocketDescriptor);
 }
@@ -286,17 +230,9 @@ void UPnP::processPacket(BaseLib::Http& http)
 			}
 		}
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -327,17 +263,9 @@ void UPnP::setPackets()
         _packets.okRootUUID = std::vector<char>(&okPacketRootUUID.at(0), &okPacketRootUUID.at(0) + okPacketRootUUID.size());
         _packets.ok = std::vector<char>(&okPacket.at(0), &okPacket.at(0) + okPacket.size());
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -368,17 +296,9 @@ void UPnP::sendOK(std::string destinationIpAddress, int32_t destinationPort, boo
             }
         }
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -408,17 +328,9 @@ void UPnP::sendNotify()
 
 		_lastAdvertisement = BaseLib::HelperFunctions::getTimeSeconds();
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -446,17 +358,9 @@ void UPnP::sendByebye()
             GD::out.printWarning("Warning: Error sending packet in UPnP server: " + std::string(strerror(errno)));
         }
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -514,16 +418,8 @@ void UPnP::getSocketDescriptor()
             GD::out.printWarning("Warning: Could not set socket options in UPnP server: " + std::string(strerror(errno)));
 		}
 	}
-	catch(BaseLib::Exception& ex)
-	{
-		GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-	}
 	catch(const std::exception& ex)
 	{
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-	}
-	catch(...)
-	{
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
 	}
 }

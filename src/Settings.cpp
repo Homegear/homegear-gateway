@@ -301,12 +301,4 @@ void Settings::load(std::string filename, std::string executablePath)
     {
 		GD::bl->out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
-    catch(const BaseLib::Exception& ex)
-    {
-    	GD::bl->out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-    	GD::bl->out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-    }
 }
