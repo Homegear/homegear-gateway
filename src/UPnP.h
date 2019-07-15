@@ -64,7 +64,7 @@ private:
 	int32_t _lastAdvertisement = 0;
 
 	void getAddress();
-	void getSocketDescriptor();
+    std::shared_ptr<BaseLib::FileDescriptor> getSocketDescriptor();
 	void listen();
 	void processPacket(BaseLib::Http& http);
 	void sendOK(std::string destinationIpAddress, int32_t destinationPort, bool rootDeviceOnly);

@@ -38,17 +38,9 @@ UPnP::UPnP()
 		_stopServer = true;
 		_serverSocketDescriptor.reset(new BaseLib::FileDescriptor());
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -58,17 +50,9 @@ UPnP::~UPnP()
 	{
 		stop();
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -78,36 +62,12 @@ void UPnP::start()
 	{
 		stop();
 
-        if(_address.empty()) getAddress();
-        if(_address.empty())
-        {
-            GD::out.printError("Error: UPnP Server: Could not get IP address.");
-            return;
-        }
-        if(GD::settings.upnpUdn().empty())
-        {
-            GD::out.printError("Error: UPnP Server: Could not get UDN.");
-            return;
-        }
-        _st = "uuid:" + GD::settings.upnpUdn();
-
-        setPackets();
-
 		_stopServer = false;
 		GD::bl->threadManager.start(_listenThread, true, &UPnP::listen, this);
-		sendNotify();
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -120,17 +80,9 @@ void UPnP::stop()
 		GD::bl->threadManager.join(_listenThread);
 		sendByebye();
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -150,17 +102,9 @@ void UPnP::getAddress()
 		}
 		else _address = GD::settings.upnpIpAddress();
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -168,8 +112,8 @@ void UPnP::listen()
 {
 	try
 	{
-		getSocketDescriptor();
 		GD::out.printInfo("Info: UPnP server started listening.");
+        sendNotify();
 
 		_lastAdvertisement = BaseLib::HelperFunctions::getTimeSeconds();
 		char buffer[1024];
@@ -187,8 +131,12 @@ void UPnP::listen()
 				if(!_serverSocketDescriptor || _serverSocketDescriptor->descriptor == -1)
 				{
 					if(_stopServer) break;
+                    _serverSocketDescriptor = getSocketDescriptor();
 					std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-					getSocketDescriptor();
+					if(!_serverSocketDescriptor || _serverSocketDescriptor->descriptor == -1)
+                    {
+					    GD::out.printWarning("Warning: Could not bind UPnP socket.");
+                    }
 					continue;
 				}
 
@@ -226,31 +174,15 @@ void UPnP::listen()
 				http.process(buffer, bytesReceived, false);
 				if(http.isFinished()) processPacket(http);
 			}
-            catch(BaseLib::Exception& ex)
-            {
-                GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-            }
             catch(const std::exception& ex)
             {
                 GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
             }
-            catch(...)
-            {
-                GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-            }
 		}
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 	GD::bl->fileDescriptorManager.shutdown(_serverSocketDescriptor);
 }
@@ -286,17 +218,9 @@ void UPnP::processPacket(BaseLib::Http& http)
 			}
 		}
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -327,17 +251,9 @@ void UPnP::setPackets()
         _packets.okRootUUID = std::vector<char>(&okPacketRootUUID.at(0), &okPacketRootUUID.at(0) + okPacketRootUUID.size());
         _packets.ok = std::vector<char>(&okPacket.at(0), &okPacket.at(0) + okPacket.size());
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -368,17 +284,9 @@ void UPnP::sendOK(std::string destinationIpAddress, int32_t destinationPort, boo
             }
         }
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -408,17 +316,9 @@ void UPnP::sendNotify()
 
 		_lastAdvertisement = BaseLib::HelperFunctions::getTimeSeconds();
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -446,34 +346,40 @@ void UPnP::sendByebye()
             GD::out.printWarning("Warning: Error sending packet in UPnP server: " + std::string(strerror(errno)));
         }
 	}
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-    }
 }
 
-void UPnP::getSocketDescriptor()
+std::shared_ptr<BaseLib::FileDescriptor> UPnP::getSocketDescriptor()
 {
 	try
 	{
-		if(_address.empty()) return;
-		_serverSocketDescriptor = GD::bl->fileDescriptorManager.add(socket(AF_INET, SOCK_DGRAM, 0));
-		if(_serverSocketDescriptor->descriptor == -1)
+        if(_address.empty()) getAddress();
+        if(_address.empty())
+        {
+            GD::out.printError("Error: UPnP Server: Could not get IP address.");
+            return std::shared_ptr<BaseLib::FileDescriptor>();
+        }
+        if(GD::settings.upnpUdn().empty())
+        {
+            GD::out.printError("Error: UPnP Server: Could not get UDN.");
+            return std::shared_ptr<BaseLib::FileDescriptor>();
+        }
+        _st = "uuid:" + GD::settings.upnpUdn();
+
+        setPackets();
+
+		auto serverSocketDescriptor = GD::bl->fileDescriptorManager.add(socket(AF_INET, SOCK_DGRAM, 0));
+		if(serverSocketDescriptor->descriptor == -1)
 		{
 			GD::out.printError("Error: Could not create socket.");
-			return;
+			return std::shared_ptr<BaseLib::FileDescriptor>();
 		}
 
 		int32_t reuse = 1;
-		if(setsockopt(_serverSocketDescriptor->descriptor, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse)) == -1)
+		if(setsockopt(serverSocketDescriptor->descriptor, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse)) == -1)
 		{
 			GD::out.printWarning("Warning: Could not set socket options in UPnP server: " + std::string(strerror(errno)));
 		}
@@ -481,14 +387,14 @@ void UPnP::getSocketDescriptor()
 		GD::out.printInfo("Info: UPnP server: Binding to address: " + _address);
 
 		char loopch = 0;
-		if(setsockopt(_serverSocketDescriptor->descriptor, IPPROTO_IP, IP_MULTICAST_LOOP, (char *)&loopch, sizeof(loopch)) == -1)
+		if(setsockopt(serverSocketDescriptor->descriptor, IPPROTO_IP, IP_MULTICAST_LOOP, (char *)&loopch, sizeof(loopch)) == -1)
 		{
 			GD::out.printWarning("Warning: Could not set socket options in UPnP server: " + std::string(strerror(errno)));
 		}
 
 		struct in_addr localInterface;
 		localInterface.s_addr = inet_addr(_address.c_str());
-		if(setsockopt(_serverSocketDescriptor->descriptor, IPPROTO_IP, IP_MULTICAST_IF, (char *)&localInterface, sizeof(localInterface)) == -1)
+		if(setsockopt(serverSocketDescriptor->descriptor, IPPROTO_IP, IP_MULTICAST_IF, (char *)&localInterface, sizeof(localInterface)) == -1)
 		{
 			GD::out.printWarning("Warning: Could not set socket options in UPnP server: " + std::string(strerror(errno)));
 		}
@@ -499,31 +405,26 @@ void UPnP::getSocketDescriptor()
 		localSock.sin_port = htons(1900);
 		localSock.sin_addr.s_addr = inet_addr("239.255.255.250");
 
-		if(bind(_serverSocketDescriptor->descriptor, (struct sockaddr*)&localSock, sizeof(localSock)) == -1)
+		if(bind(serverSocketDescriptor->descriptor, (struct sockaddr*)&localSock, sizeof(localSock)) == -1)
 		{
 			GD::out.printError("Error: Binding to address " + _address + " failed: " + std::string(strerror(errno)));
-			GD::bl->fileDescriptorManager.close(_serverSocketDescriptor);
-			return;
+			GD::bl->fileDescriptorManager.close(serverSocketDescriptor);
+			return std::shared_ptr<BaseLib::FileDescriptor>();
 		}
 
 		struct ip_mreq group;
 		group.imr_multiaddr.s_addr = inet_addr("239.255.255.250");
 		group.imr_interface.s_addr = inet_addr(_address.c_str());
-		if(setsockopt(_serverSocketDescriptor->descriptor, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&group, sizeof(group)) == -1)
+		if(setsockopt(serverSocketDescriptor->descriptor, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&group, sizeof(group)) == -1)
 		{
             GD::out.printWarning("Warning: Could not set socket options in UPnP server: " + std::string(strerror(errno)));
 		}
-	}
-	catch(BaseLib::Exception& ex)
-	{
-		GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+
+		return serverSocketDescriptor;
 	}
 	catch(const std::exception& ex)
 	{
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
 	}
-	catch(...)
-	{
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-	}
+    return std::shared_ptr<BaseLib::FileDescriptor>();
 }
