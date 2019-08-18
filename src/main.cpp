@@ -30,8 +30,6 @@
 
 #include "GD.h"
 
-#include <homegear-base/Managers/ProcessManager.h>
-
 #include <iostream>
 
 #include <malloc.h>
@@ -89,7 +87,7 @@ void terminateProgram(int signalNumber)
     }
     GD::rpcServer->stop();
     GD::rpcServer.reset();
-    BaseLib::ProcessManager::stopSignalHandler(GD::bl->threadManager);
+
     GD::out.printMessage("(Shutdown) => Shutdown complete.");
     fclose(stdout);
     fclose(stderr);
@@ -365,7 +363,6 @@ void startUp()
 
 		setLimits();
 
-        BaseLib::ProcessManager::startSignalHandler(); //Needs to be called before starting any threads
         GD::bl->threadManager.start(_signalHandlerThread, true, &signalHandlerThread);
 
         if(GD::runAsUser.empty()) GD::runAsUser = GD::settings.runAsUser();
