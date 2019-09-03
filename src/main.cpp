@@ -55,6 +55,7 @@ std::atomic_bool _startUpComplete;
 std::atomic_bool _shutdownQueued;
 bool _disposing = false;
 std::thread _signalHandlerThread;
+std::atomic_bool _stopMain{false};
 
 void exitProgram(int exitCode)
 {
@@ -63,39 +64,49 @@ void exitProgram(int exitCode)
 
 void terminateProgram(int signalNumber)
 {
-    _shuttingDownMutex.lock();
-    if(!_startUpComplete)
+    try
     {
-        GD::out.printMessage("Info: Startup is not complete yet. Queueing shutdown.");
-        _shutdownQueued = true;
+        _shuttingDownMutex.lock();
+        if(!_startUpComplete)
+        {
+            GD::out.printMessage("Info: Startup is not complete yet. Queueing shutdown.");
+            _shutdownQueued = true;
+            _shuttingDownMutex.unlock();
+            return;
+        }
+        if(GD::bl->shuttingDown)
+        {
+            _shuttingDownMutex.unlock();
+            return;
+        }
+        GD::out.printMessage("(Shutdown) => Stopping Homegear Gateway (Signal: " + std::to_string(signalNumber) + ")");
+        GD::bl->shuttingDown = true;
         _shuttingDownMutex.unlock();
-        return;
-    }
-    if(GD::bl->shuttingDown)
-    {
-        _shuttingDownMutex.unlock();
-        return;
-    }
-    GD::out.printMessage("(Shutdown) => Stopping Homegear Gateway (Signal: " + std::to_string(signalNumber) + ")");
-    GD::bl->shuttingDown = true;
-    _shuttingDownMutex.unlock();
-    _disposing = true;
-    if(GD::upnp)
-    {
-        GD::out.printInfo("Stopping UPnP server...");
-        GD::upnp->stop();
-    }
-    GD::rpcServer->stop();
-    GD::rpcServer.reset();
+        _disposing = true;
+        if(GD::upnp)
+        {
+            GD::out.printInfo("Stopping UPnP server...");
+            GD::upnp->stop();
+        }
+        GD::rpcServer->stop();
+        GD::rpcServer.reset();
 
-    GD::out.printMessage("(Shutdown) => Shutdown complete.");
-    fclose(stdout);
-    fclose(stderr);
-    gnutls_global_deinit();
-    gcry_control(GCRYCTL_SUSPEND_SECMEM_WARN);
-    gcry_control(GCRYCTL_TERM_SECMEM);
-    gcry_control(GCRYCTL_RESUME_SECMEM_WARN);
-    _exit(0);
+        GD::out.printMessage("(Shutdown) => Shutdown complete.");
+        fclose(stdout);
+        fclose(stderr);
+        gnutls_global_deinit();
+        gcry_control(GCRYCTL_SUSPEND_SECMEM_WARN);
+        gcry_control(GCRYCTL_TERM_SECMEM);
+        gcry_control(GCRYCTL_RESUME_SECMEM_WARN);
+
+        _stopMain = true;
+        return;
+    }
+    catch(const std::exception& ex)
+    {
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+    }
+    _exit(1);
 }
 
 void signalHandlerThread()
@@ -126,6 +137,7 @@ void signalHandlerThread()
             if(signalNumber == SIGTERM || signalNumber == SIGINT)
             {
                 terminateProgram(signalNumber);
+                return;
             }
             else if(signalNumber == SIGHUP)
             {
@@ -154,6 +166,7 @@ void signalHandlerThread()
                 {
                     _shuttingDownMutex.unlock();
                     terminateProgram(SIGTERM);
+                    return;
                 }
                 _shuttingDownMutex.unlock();
                 GD::out.printInfo("Info: Reload complete.");
@@ -493,11 +506,58 @@ void startUp()
 			GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
 		}
 
-		while(BaseLib::HelperFunctions::getTime() < 1000000000000)
-		{
-			GD::out.printWarning("Warning: Time is in the past. Waiting for ntp to set the time...");
-			std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-		}
+        if(GD::settings.waitForCorrectTime())
+        {
+            while(BaseLib::HelperFunctions::getTime() < 1000000000000)
+            {
+                GD::out.printWarning("Warning: Time is in the past. Waiting for ntp to set the time...");
+                std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+            }
+        }
+
+        if(!GD::settings.waitForIp4OnInterface().empty())
+        {
+            std::string ipAddress;
+            while(ipAddress.empty())
+            {
+                try
+                {
+                    ipAddress = BaseLib::Net::getMyIpAddress(GD::settings.waitForIp4OnInterface());
+                }
+                catch(const BaseLib::NetException& ex)
+                {
+                    GD::out.printDebug("Debug: " + std::string(ex.what()));
+                }
+                if(_shutdownQueued) exit(1);
+                if(ipAddress.empty())
+                {
+                    GD::out.printWarning("Warning: " + GD::settings.waitForIp4OnInterface() + " has no IPv4 address assigned yet. Waiting...");
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+                }
+            }
+        }
+
+        if(!GD::settings.waitForIp6OnInterface().empty())
+        {
+            std::string ipAddress;
+            while(ipAddress.empty())
+            {
+                try
+                {
+                    ipAddress = BaseLib::Net::getMyIp6Address(GD::settings.waitForIp6OnInterface());
+                }
+                catch(const BaseLib::NetException& ex)
+                {
+                    GD::out.printDebug("Debug: " + std::string(ex.what()));
+                }
+                if(_shutdownQueued) exit(1);
+                if(ipAddress.empty())
+                {
+                    GD::out.printWarning("Warning: " + GD::settings.waitForIp6OnInterface() + " has no IPv6 address assigned yet. Waiting...");
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+                }
+            }
+        }
 
 		GD::rpcServer.reset(new RpcServer(GD::bl.get()));
 		if(!_shutdownQueued)
@@ -539,7 +599,7 @@ void startUp()
             GD::rpcServer->txTest();
         }
 
-       	while(true) std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+       	while(!_stopMain) std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 	catch(const std::exception& ex)
     {
@@ -641,7 +701,7 @@ int main(int argc, char* argv[])
     		else if(arg == "-v")
     		{
     			std::cout << "Homegear Gateway version " << VERSION << std::endl;
-    			std::cout << "Copyright (c) 2013-2018 Homegear GmbH" << std::endl << std::endl;
+    			std::cout << "Copyright (c) 2013-2019 Homegear GmbH" << std::endl << std::endl;
     			exit(0);
     		}
     		else
@@ -679,13 +739,12 @@ int main(int argc, char* argv[])
 		if(_startAsDaemon) startDaemon();
     	startUp();
 
+        GD::bl->threadManager.join(_signalHandlerThread);
         return 0;
     }
     catch(const std::exception& ex)
 	{
 		GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
 	}
-    terminateProgram(SIGTERM);
-
-    return 1;
+    _exit(1);
 }

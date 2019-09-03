@@ -49,6 +49,9 @@ public:
 	int32_t debugLevel() { return _debugLevel; }
 	bool memoryDebugging() { return _memoryDebugging; }
 	bool enableCoreDumps() { return _enableCoreDumps; };
+    std::string waitForIp4OnInterface() { return _waitForIp4OnInterface; }
+    std::string waitForIp6OnInterface() { return _waitForIp6OnInterface; }
+    bool waitForCorrectTime() { return _waitForCorrectTime; }
 	std::string workingDirectory() { return _workingDirectory; }
 	std::string logFilePath() { return _logFilePath; }
 	std::string dataPath() { return _dataPath; }
@@ -85,6 +88,9 @@ private:
 	int32_t _debugLevel = 3;
 	bool _memoryDebugging = false;
 	bool _enableCoreDumps = true;
+    std::string _waitForIp4OnInterface;
+    std::string _waitForIp6OnInterface;
+    bool _waitForCorrectTime = true;
 	std::string _workingDirectory;
 	std::string _logFilePath;
 	std::string _dataPath;

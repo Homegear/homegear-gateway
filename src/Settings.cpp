@@ -45,6 +45,9 @@ void Settings::reset()
 	_debugLevel = 3;
 	_memoryDebugging = false;
 	_enableCoreDumps = true;
+    _waitForIp4OnInterface = "";
+    _waitForIp6OnInterface = "";
+    _waitForCorrectTime = true;
 	_workingDirectory = _executablePath;
 	_logFilePath = "/var/log/homegear-gateway/";
     _dataPath = "/var/lib/homegear-gateway/";
@@ -167,6 +170,21 @@ void Settings::load(std::string filename, std::string executablePath)
 					if(BaseLib::HelperFunctions::toLower(value) == "false") _enableCoreDumps = false;
 					GD::bl->out.printDebug("Debug: enableCoreDumps set to " + std::to_string(_enableCoreDumps));
 				}
+                else if(name == "waitforip4oninterface")
+                {
+                    _waitForIp4OnInterface = value;
+                    GD::bl->out.printDebug("Debug: waitForIp4OnInterface set to " + _waitForIp4OnInterface);
+                }
+                else if(name == "waitforip6oninterface")
+                {
+                    _waitForIp6OnInterface = value;
+                    GD::bl->out.printDebug("Debug: waitForIp6OnInterface set to " + _waitForIp6OnInterface);
+                }
+                else if(name == "waitforcorrecttime")
+                {
+                    _waitForCorrectTime = (BaseLib::HelperFunctions::toLower(value) == "true");
+                    GD::bl->out.printDebug("Debug: waitForCorrectTime set to " + std::to_string(_waitForCorrectTime));
+                }
 				else if(name == "workingdirectory")
 				{
 					_workingDirectory = value;
