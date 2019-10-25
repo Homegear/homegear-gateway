@@ -37,7 +37,7 @@
 #include "RpcServer.h"
 #include "UPnP.h"
 
-class GD
+class Gd
 {
 public:
 	static std::unique_ptr<BaseLib::SharedObjects> bl;
@@ -54,10 +54,10 @@ public:
     static std::unique_ptr<RpcServer> rpcServer;
 	static std::unique_ptr<UPnP> upnp;
 
-	virtual ~GD() = default;
+	virtual ~Gd() = default;
 private:
 	//Non public constructor
-	GD();
+	Gd();
 };
 
 #endif /* GD_H_ */

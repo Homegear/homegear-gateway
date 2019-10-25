@@ -29,7 +29,7 @@
 */
 
 #include "EnOcean.h"
-#include "../GD.h"
+#include "../Gd.h"
 
 EnOcean::EnOcean(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl)
 {
@@ -48,7 +48,7 @@ EnOcean::EnOcean(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl)
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -57,11 +57,11 @@ EnOcean::~EnOcean()
     try
     {
         stop();
-        GD::bl->threadManager.join(_initThread);
+        Gd::bl->threadManager.join(_initThread);
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -69,17 +69,17 @@ void EnOcean::start()
 {
     try
     {
-        if(GD::settings.device().empty())
+        if(Gd::settings.device().empty())
         {
-            GD::out.printError("Error: No device defined for family EnOcean. Please specify it in \"gateway.conf\".");
+            Gd::out.printError("Error: No device defined for family EnOcean. Please specify it in \"gateway.conf\".");
             return;
         }
 
-        _serial.reset(new BaseLib::SerialReaderWriter(_bl, GD::settings.device(), 57600, 0, true, -1));
+        _serial.reset(new BaseLib::SerialReaderWriter(_bl, Gd::settings.device(), 57600, 0, true, -1));
         _serial->openDevice(false, false, false);
         if(!_serial->isOpen())
         {
-            GD::out.printError("Error: Could not open device.");
+            Gd::out.printError("Error: Could not open device.");
             return;
         }
 
@@ -98,7 +98,7 @@ void EnOcean::start()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -114,7 +114,7 @@ void EnOcean::stop()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -135,18 +135,18 @@ void EnOcean::getResponse(uint8_t packetType, std::vector<uint8_t>& requestPacke
 
         try
         {
-            GD::out.printInfo("Info: Sending packet " + BaseLib::HelperFunctions::getHexString(requestPacket));
+            Gd::out.printInfo("Info: Sending packet " + BaseLib::HelperFunctions::getHexString(requestPacket));
             rawSend(requestPacket);
         }
         catch(BaseLib::SocketOperationException ex)
         {
-            GD::out.printError("Error sending packet: " + std::string(ex.what()));
+            Gd::out.printError("Error sending packet: " + std::string(ex.what()));
             return;
         }
 
         if(!request->conditionVariable.wait_for(lock, std::chrono::milliseconds(10000), [&] { return request->mutexReady; }))
         {
-            GD::out.printError("Error: No response received to packet: " + BaseLib::HelperFunctions::getHexString(requestPacket));
+            Gd::out.printError("Error: No response received to packet: " + BaseLib::HelperFunctions::getHexString(requestPacket));
         }
         responsePacket = request->response;
 
@@ -156,7 +156,7 @@ void EnOcean::getResponse(uint8_t packetType, std::vector<uint8_t>& requestPacke
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -182,7 +182,7 @@ void EnOcean::addCrc8(std::vector<uint8_t>& packet)
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -195,17 +195,17 @@ void EnOcean::reconnect()
         _serial->openDevice(false, false, false);
         if(!_serial->isOpen())
         {
-            GD::out.printError("Error: Could not open device.");
+            Gd::out.printError("Error: Could not open device.");
             return;
         }
         _stopped = false;
 
-        GD::bl->threadManager.join(_initThread);
+        Gd::bl->threadManager.join(_initThread);
         _bl->threadManager.start(_initThread, true, &EnOcean::init, this);
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -222,7 +222,7 @@ void EnOcean::init()
             if(response.size() != 13 || response[1] != 0 || response[2] != 5 || response[3] != 1 || response[6] != 0)
             {
                 if(i < 9) continue;
-                GD::out.printError("Error reading address from device: " + BaseLib::HelperFunctions::getHexString(data));
+                Gd::out.printError("Error reading address from device: " + BaseLib::HelperFunctions::getHexString(data));
                 _stopped = true;
                 return;
             }
@@ -230,13 +230,13 @@ void EnOcean::init()
             break;
         }
 
-        GD::out.printInfo("Info: Base address set to 0x" + BaseLib::HelperFunctions::getHexString(_baseAddress, 8) + ". Remaining changes: " + std::to_string(response[11]));
+        Gd::out.printInfo("Info: Base address set to 0x" + BaseLib::HelperFunctions::getHexString(_baseAddress, 8) + ". Remaining changes: " + std::to_string(response[11]));
 
         _initComplete = true;
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -258,7 +258,7 @@ void EnOcean::listen()
                 if(_stopped || !_serial || !_serial->isOpen())
                 {
                     if(_stopCallbackThread) return;
-                    if(_stopped) GD::out.printWarning("Warning: Connection to device closed. Trying to reconnect...");
+                    if(_stopped) Gd::out.printWarning("Warning: Connection to device closed. Trying to reconnect...");
                     _serial->closeDevice();
                     std::this_thread::sleep_for(std::chrono::milliseconds(10000));
                     reconnect();
@@ -268,7 +268,7 @@ void EnOcean::listen()
                 result = _serial->readChar(byte, 100000);
                 if(result == -1)
                 {
-                    GD::out.printError("Error reading from serial device.");
+                    Gd::out.printError("Error reading from serial device.");
                     _stopped = true;
                     size = 0;
                     data.clear();
@@ -293,7 +293,7 @@ void EnOcean::listen()
                     }
                     if(crc8 != data[5])
                     {
-                        GD::out.printError("Error: CRC (0x" + BaseLib::HelperFunctions::getHexString(crc8, 2) + ") failed for header: " + BaseLib::HelperFunctions::getHexString(data));
+                        Gd::out.printError("Error: CRC (0x" + BaseLib::HelperFunctions::getHexString(crc8, 2) + ") failed for header: " + BaseLib::HelperFunctions::getHexString(data));
                         size = 0;
                         data.clear();
                         continue;
@@ -301,7 +301,7 @@ void EnOcean::listen()
                     size = ((data[1] << 8) | data[2]) + data[3];
                     if(size == 0)
                     {
-                        GD::out.printError("Error: Header has invalid size information: " + BaseLib::HelperFunctions::getHexString(data));
+                        Gd::out.printError("Error: Header has invalid size information: " + BaseLib::HelperFunctions::getHexString(data));
                         size = 0;
                         data.clear();
                         continue;
@@ -317,7 +317,7 @@ void EnOcean::listen()
                     }
                     if(crc8 != data.back())
                     {
-                        GD::out.printError("Error: CRC failed for packet: " + BaseLib::HelperFunctions::getHexString(data));
+                        Gd::out.printError("Error: CRC failed for packet: " + BaseLib::HelperFunctions::getHexString(data));
                         size = 0;
                         data.clear();
                         continue;
@@ -331,13 +331,13 @@ void EnOcean::listen()
             }
             catch(const std::exception& ex)
             {
-                GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+                Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
             }
         }
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -347,11 +347,11 @@ void EnOcean::processPacket(std::vector<uint8_t>& data)
     {
         if(data.size() < 5)
         {
-            GD::out.printError("Error: Too small packet received: " + BaseLib::HelperFunctions::getHexString(data));
+            Gd::out.printError("Error: Too small packet received: " + BaseLib::HelperFunctions::getHexString(data));
             return;
         }
 
-        if(GD::bl->debugLevel >= 5) GD::out.printDebug("Debug: Packet received: " + BaseLib::HelperFunctions::getHexString(data));
+        if(Gd::bl->debugLevel >= 5) Gd::out.printDebug("Debug: Packet received: " + BaseLib::HelperFunctions::getHexString(data));
 
         uint8_t packetType = data[4];
         std::unique_lock<std::mutex> requestsGuard(_requestsMutex);
@@ -378,12 +378,12 @@ void EnOcean::processPacket(std::vector<uint8_t>& data)
         auto result = _invoke("packetReceived", parameters);
         if(result->errorStruct && result->structValue->at("faultCode")->integerValue != -1)
         {
-            GD::out.printError("Error calling packetReceived(): " + result->structValue->at("faultString")->stringValue);
+            Gd::out.printError("Error calling packetReceived(): " + result->structValue->at("faultString")->stringValue);
         }
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -396,7 +396,7 @@ void EnOcean::rawSend(std::vector<uint8_t>& packet)
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -407,13 +407,13 @@ BaseLib::PVariable EnOcean::callMethod(std::string& method, BaseLib::PArray para
         auto localMethodIterator = _localRpcMethods.find(method);
         if(localMethodIterator == _localRpcMethods.end()) return BaseLib::Variable::createError(-32601, ": Requested method not found.");
 
-        if(GD::bl->debugLevel >= 5) GD::out.printDebug("Debug: Server is calling RPC method: " + method);
+        if(Gd::bl->debugLevel >= 5) Gd::out.printDebug("Debug: Server is calling RPC method: " + method);
 
         return localMethodIterator->second(parameters);
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
 }
@@ -427,11 +427,11 @@ BaseLib::PVariable EnOcean::sendPacket(BaseLib::PArray& parameters)
 
         if(!_initComplete)
         {
-            GD::out.printInfo("Info: Waiting one second, because init is not complete.");
+            Gd::out.printInfo("Info: Waiting one second, because init is not complete.");
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             if(!_initComplete)
             {
-                GD::out.printWarning("Warning: !!!Not!!! sending packet " + BaseLib::HelperFunctions::getHexString(parameters->at(1)->binaryValue) + ", because init is not complete.");
+                Gd::out.printWarning("Warning: !!!Not!!! sending packet " + BaseLib::HelperFunctions::getHexString(parameters->at(1)->binaryValue) + ", because init is not complete.");
                 return BaseLib::Variable::createError(-2, "Could not send packet. Init is not complete.");
             }
         }
@@ -441,7 +441,7 @@ BaseLib::PVariable EnOcean::sendPacket(BaseLib::PArray& parameters)
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
 }
@@ -452,11 +452,11 @@ BaseLib::PVariable EnOcean::getBaseAddress(BaseLib::PArray& parameters)
     {
         if(!_initComplete)
         {
-            GD::out.printInfo("Info: Waiting one second, because init is not complete.");
+            Gd::out.printInfo("Info: Waiting one second, because init is not complete.");
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             if(!_initComplete)
             {
-                GD::out.printWarning("Warning: !!!Not!!! sending packet " + BaseLib::HelperFunctions::getHexString(parameters->at(1)->binaryValue) + ", because init is not complete.");
+                Gd::out.printWarning("Warning: !!!Not!!! sending packet " + BaseLib::HelperFunctions::getHexString(parameters->at(1)->binaryValue) + ", because init is not complete.");
                 return BaseLib::Variable::createError(-2, "Could not get base address. Init is not complete.");
             }
         }
@@ -465,7 +465,7 @@ BaseLib::PVariable EnOcean::getBaseAddress(BaseLib::PArray& parameters)
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
 }
@@ -478,11 +478,11 @@ BaseLib::PVariable EnOcean::setBaseAddress(BaseLib::PArray& parameters)
 
         if(!_initComplete)
         {
-            GD::out.printInfo("Info: Waiting one second, because init is not complete.");
+            Gd::out.printInfo("Info: Waiting one second, because init is not complete.");
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             if(!_initComplete)
             {
-                GD::out.printWarning("Warning: !!!Not!!! sending packet " + BaseLib::HelperFunctions::getHexString(parameters->at(1)->binaryValue) + ", because init is not complete.");
+                Gd::out.printWarning("Warning: !!!Not!!! sending packet " + BaseLib::HelperFunctions::getHexString(parameters->at(1)->binaryValue) + ", because init is not complete.");
                 return BaseLib::Variable::createError(-2, "Could not set base address. Init is not complete.");
             }
         }
@@ -491,7 +491,7 @@ BaseLib::PVariable EnOcean::setBaseAddress(BaseLib::PArray& parameters)
 
         if((value & 0xFF000000) != 0xFF000000)
         {
-            GD::out.printError("Error: Could not set base address. Address must start with 0xFF.");
+            Gd::out.printError("Error: Could not set base address. Address must start with 0xFF.");
             return BaseLib::Variable::createError(-3, "Could not set base address. Address must start with 0xFF.");
         }
 
@@ -504,7 +504,7 @@ BaseLib::PVariable EnOcean::setBaseAddress(BaseLib::PArray& parameters)
             getResponse(0x02, data, response);
             if(response.size() != 8 || response[1] != 0 || response[2] != 1 || response[3] != 0 || response[4] != 2 || response[6] != 0)
             {
-                GD::out.printError("Error setting address on device: " + BaseLib::HelperFunctions::getHexString(data));
+                Gd::out.printError("Error setting address on device: " + BaseLib::HelperFunctions::getHexString(data));
                 _stopped = true;
                 return BaseLib::Variable::createError(-4, "Error setting address on device: " + BaseLib::HelperFunctions::getHexString(data));
             }
@@ -518,7 +518,7 @@ BaseLib::PVariable EnOcean::setBaseAddress(BaseLib::PArray& parameters)
             if(response.size() != 13 || response[1] != 0 || response[2] != 5 || response[3] != 1 || response[6] != 0)
             {
                 if(i < 9) continue;
-                GD::out.printError("Error reading address from device: " + BaseLib::HelperFunctions::getHexString(data));
+                Gd::out.printError("Error reading address from device: " + BaseLib::HelperFunctions::getHexString(data));
                 _stopped = true;
                 return BaseLib::Variable::createError(-5, "Error reading address from device: " + BaseLib::HelperFunctions::getHexString(data));
             }
@@ -526,13 +526,13 @@ BaseLib::PVariable EnOcean::setBaseAddress(BaseLib::PArray& parameters)
             break;
         }
 
-        GD::out.printInfo("Info: Base address set to 0x" + BaseLib::HelperFunctions::getHexString(_baseAddress, 8) + ". Remaining changes: " + std::to_string(response[11]));
+        Gd::out.printInfo("Info: Base address set to 0x" + BaseLib::HelperFunctions::getHexString(_baseAddress, 8) + ". Remaining changes: " + std::to_string(response[11]));
 
         return std::make_shared<BaseLib::Variable>((int32_t)response[11]);
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
 }

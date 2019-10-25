@@ -29,7 +29,7 @@
 */
 
 #include "MaxCulfw.h"
-#include "../GD.h"
+#include "../Gd.h"
 
 MaxCulfw::MaxCulfw(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl)
 {
@@ -41,13 +41,13 @@ MaxCulfw::MaxCulfw(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl)
 
         _localRpcMethods.emplace("sendPacket", std::bind(&MaxCulfw::sendPacket, this, std::placeholders::_1));
 
-        _gpio.reset(new BaseLib::LowLevel::Gpio(bl, GD::settings.gpioPath()));
+        _gpio.reset(new BaseLib::LowLevel::Gpio(bl, Gd::settings.gpioPath()));
 
         start();
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -59,7 +59,7 @@ MaxCulfw::~MaxCulfw()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -67,35 +67,35 @@ void MaxCulfw::start()
 {
     try
     {
-        if(GD::settings.device().empty())
+        if(Gd::settings.device().empty())
         {
-            GD::out.printError("Error: No device defined for family MAX! CUL. Please specify it in \"gateway.conf\".");
+            Gd::out.printError("Error: No device defined for family MAX! CUL. Please specify it in \"gateway.conf\".");
             return;
         }
 
-        _serial.reset(new BaseLib::SerialReaderWriter(_bl, GD::settings.device(), 38400, 0, true, 45));
+        _serial.reset(new BaseLib::SerialReaderWriter(_bl, Gd::settings.device(), 38400, 0, true, 45));
         _eventHandlerSelf = _serial->addEventHandler(this);
         _serial->openDevice(false, false, true);
         if(!_serial->isOpen())
         {
-            GD::out.printError("Error: Could not open device.");
+            Gd::out.printError("Error: Could not open device.");
             return;
         }
 
-        if(GD::settings.gpio2() != -1)
+        if(Gd::settings.gpio2() != -1)
         {
-            _gpio->openDevice(GD::settings.gpio2(), false);
-            if(!_gpio->get(GD::settings.gpio2())) _gpio->set(GD::settings.gpio2(), true);
-            _gpio->closeDevice(GD::settings.gpio2());
+            _gpio->openDevice(Gd::settings.gpio2(), false);
+            if(!_gpio->get(Gd::settings.gpio2())) _gpio->set(Gd::settings.gpio2(), true);
+            _gpio->closeDevice(Gd::settings.gpio2());
         }
-        if(GD::settings.gpio1() != -1)
+        if(Gd::settings.gpio1() != -1)
         {
-            _gpio->openDevice(GD::settings.gpio1(), false);
-            _gpio->set(GD::settings.gpio1(), false);
+            _gpio->openDevice(Gd::settings.gpio1(), false);
+            _gpio->set(Gd::settings.gpio1(), false);
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            _gpio->set(GD::settings.gpio1(), true);
+            _gpio->set(Gd::settings.gpio1(), true);
             std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-            _gpio->closeDevice(GD::settings.gpio1());
+            _gpio->closeDevice(Gd::settings.gpio1());
         }
 
         std::string packet = "X21\nZr\n";
@@ -104,7 +104,7 @@ void MaxCulfw::start()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -119,7 +119,7 @@ void MaxCulfw::stop()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -141,20 +141,20 @@ void MaxCulfw::lineReceived(const std::string& data)
                 auto result = _invoke("packetReceived", parameters);
                 if(result->errorStruct && result->structValue->at("faultCode")->integerValue != -1)
                 {
-                    GD::out.printError("Error calling packetReceived(): " + result->structValue->at("faultString")->stringValue);
+                    Gd::out.printError("Error calling packetReceived(): " + result->structValue->at("faultString")->stringValue);
                 }
             }
         }
         else if(!data.empty())
         {
-            if(data.compare(0, 4, "LOVF") == 0) GD::out.printWarning("Warning: COC with reached 1% limit. You need to wait, before sending is allowed again.");
+            if(data.compare(0, 4, "LOVF") == 0) Gd::out.printWarning("Warning: COC with reached 1% limit. You need to wait, before sending is allowed again.");
             else if(data == "Z") return;
-            else GD::out.printWarning("Warning: Too short packet received: " + data);
+            else Gd::out.printWarning("Warning: Too short packet received: " + data);
         }
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -165,13 +165,13 @@ BaseLib::PVariable MaxCulfw::callMethod(std::string& method, BaseLib::PArray par
         auto localMethodIterator = _localRpcMethods.find(method);
         if(localMethodIterator == _localRpcMethods.end()) return BaseLib::Variable::createError(-32601, ": Requested method not found.");
 
-        if(GD::bl->debugLevel >= 5) GD::out.printDebug("Debug: Server is calling RPC method: " + method);
+        if(Gd::bl->debugLevel >= 5) Gd::out.printDebug("Debug: Server is calling RPC method: " + method);
 
         return localMethodIterator->second(parameters);
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
 }
@@ -185,7 +185,7 @@ BaseLib::PVariable MaxCulfw::sendPacket(BaseLib::PArray& parameters)
 
         if(!_serial)
         {
-            GD::out.printError("Error: Couldn't write to device, because the device descriptor is not valid: " + GD::settings.device());
+            Gd::out.printError("Error: Couldn't write to device, because the device descriptor is not valid: " + Gd::settings.device());
             return BaseLib::Variable::createError(-1, "Serial device is not open.");
         }
 
@@ -199,7 +199,7 @@ BaseLib::PVariable MaxCulfw::sendPacket(BaseLib::PArray& parameters)
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
 }

@@ -28,7 +28,7 @@
  * files in the program, then also delete it here.
 */
 
-#include "../GD.h"
+#include "../Gd.h"
 #include "ZWave.h"
 
 
@@ -45,7 +45,7 @@ ZWave::ZWave(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl), _stopCal
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -57,7 +57,7 @@ ZWave::~ZWave()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -65,9 +65,9 @@ void ZWave::start()
 {
     try
     {
-        if(GD::settings.device().empty())
+        if(Gd::settings.device().empty())
         {
-            GD::out.printError("Error: No device defined for family ZWave. Please specify it in \"gateway.conf\".");
+            Gd::out.printError("Error: No device defined for family ZWave. Please specify it in \"gateway.conf\".");
             return;
         }
 
@@ -83,7 +83,7 @@ void ZWave::start()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -100,7 +100,7 @@ void ZWave::stop()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -120,12 +120,12 @@ void ZWave::rawSend(const std::vector<uint8_t>& packet)
     {
         if(!_serial || !_serial->isOpen())
             return;
-        GD::out.printInfo("Info: RAW Sending packet " + BaseLib::HelperFunctions::getHexString(packet));
+        Gd::out.printInfo("Info: RAW Sending packet " + BaseLib::HelperFunctions::getHexString(packet));
         _serial->writeData(packet);
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -139,7 +139,7 @@ void ZWave::sendAck()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -152,7 +152,7 @@ void ZWave::sendNack()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -165,7 +165,7 @@ void ZWave::sendCan()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -192,7 +192,7 @@ void ZWave::listen()
 {
     try
     {
-        GD::out.printInfo("Listen thread starting");
+        Gd::out.printInfo("Listen thread starting");
 
         std::vector<uint8_t> data;
         data.reserve(200);
@@ -211,12 +211,12 @@ void ZWave::listen()
                 {
                     if(_stopCallbackThread)
                     {
-                        GD::out.printInfo("Listen thread stopped");
+                        Gd::out.printInfo("Listen thread stopped");
                         SetStopped();
                         return;
                     }
                     if(IsStopped())
-                        GD::out.printWarning("Warning: Connection to device closed. Trying to reconnect...");
+                        Gd::out.printWarning("Warning: Connection to device closed. Trying to reconnect...");
                     _serial->closeDevice();
 
                     std::this_thread::sleep_for(std::chrono::seconds(5));
@@ -225,7 +225,7 @@ void ZWave::listen()
                         reconnect();
                     else
                     {
-                        GD::out.printInfo("Listen thread stopped");
+                        Gd::out.printInfo("Listen thread stopped");
                         SetStopped();
                         return;
                     }
@@ -243,7 +243,7 @@ void ZWave::listen()
                 result = _serial->readChar(byte, 100000);
                 if(-1 == result)
                 {
-                    GD::out.printError("Error reading from serial device.");
+                    Gd::out.printError("Error reading from serial device.");
                     SetStopped();
                     packetSize = 0;
                     data.clear();
@@ -258,7 +258,7 @@ void ZWave::listen()
 
                     if(!data.empty())
                     {
-                        GD::out.printWarning("Warning: Incomplete packet received: " + BaseLib::HelperFunctions::getHexString(data));
+                        Gd::out.printWarning("Warning: Incomplete packet received: " + BaseLib::HelperFunctions::getHexString(data));
                         //sendNack();
                         data.clear();
 
@@ -283,7 +283,7 @@ void ZWave::listen()
                     }
                     else if(byte != (uint8_t)ZWaveResponseCodes::SOF)
                     {
-                        GD::out.printWarning("Warning: Unknown start byte received: " + BaseLib::HelperFunctions::getHexString(byte));
+                        Gd::out.printWarning("Warning: Unknown start byte received: " + BaseLib::HelperFunctions::getHexString(byte));
 
                         //sendNack();
                         data.push_back((uint8_t)ZWaveResponseCodes::NACK);
@@ -301,7 +301,7 @@ void ZWave::listen()
                     packetSize = data[1];
                     if(0 == packetSize)
                     {
-                        GD::out.printError("Error: Header has invalid size information: " + BaseLib::HelperFunctions::getHexString(data));
+                        Gd::out.printError("Error: Header has invalid size information: " + BaseLib::HelperFunctions::getHexString(data));
 
                         data.clear();
 
@@ -321,7 +321,7 @@ void ZWave::listen()
                     crc8 = getCrc8(data);
                     if(crc8 != data.back())
                     {
-                        GD::out.printError("Error: CRC failed for packet: " + BaseLib::HelperFunctions::getHexString(data));
+                        Gd::out.printError("Error: CRC failed for packet: " + BaseLib::HelperFunctions::getHexString(data));
                         packetSize = 0;
                         data.clear();
                         sendNack();
@@ -344,16 +344,16 @@ void ZWave::listen()
             }
             catch(const std::exception& ex)
             {
-                GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+                Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
             }
         }
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 
-    GD::out.printInfo("Listen thread stopped");
+    Gd::out.printInfo("Listen thread stopped");
 }
 
 void ZWave::_processRawPacket(std::vector<uint8_t> data)
@@ -372,14 +372,14 @@ void ZWave::processRawPacket(std::vector<uint8_t>& data)
     auto result = _invoke("packetReceived", parameters);
     if(result->errorStruct && result->structValue->at("faultCode")->integerValue != -1)
     {
-        GD::out.printError("Error calling packetReceived(): " + result->structValue->at("faultString")->stringValue);
+        Gd::out.printError("Error calling packetReceived(): " + result->structValue->at("faultString")->stringValue);
     }
 }
 
 
 void ZWave::sendReconnect()
 {
-    GD::out.printInfo("Calling reconnect on the other end");
+    Gd::out.printInfo("Calling reconnect on the other end");
 
     BaseLib::PArray parameters = std::make_shared<BaseLib::Array>();
     parameters->reserve(1);
@@ -388,7 +388,7 @@ void ZWave::sendReconnect()
     auto result = _invoke("reconnect", parameters);
     if(result->errorStruct && result->structValue->at("faultCode")->integerValue != -1)
     {
-        GD::out.printError("Error calling reconnect(): " + result->structValue->at("faultString")->stringValue);
+        Gd::out.printError("Error calling reconnect(): " + result->structValue->at("faultString")->stringValue);
     }
 }
 
@@ -396,14 +396,14 @@ void ZWave::reconnect()
 {
     try
     {
-        GD::out.printInfo("Trying to reconnect");
+        Gd::out.printInfo("Trying to reconnect");
 
         _serial->closeDevice();
         _stopped = true;
         _serial->openDevice(false, false, false);
         if(!_serial->isOpen())
         {
-            GD::out.printError("Error: Could not open device.");
+            Gd::out.printError("Error: Could not open device.");
             return;
         }
         _stopped = false;
@@ -412,7 +412,7 @@ void ZWave::reconnect()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -423,13 +423,13 @@ BaseLib::PVariable ZWave::callMethod(std::string& method, BaseLib::PArray parame
         auto localMethodIterator = _localRpcMethods.find(method);
         if(localMethodIterator == _localRpcMethods.end()) return BaseLib::Variable::createError(-32601, ": Requested method not found.");
 
-        if(_bl->debugLevel >= 5) GD::out.printDebug("Debug: Server is calling RPC method: " + method);
+        if(_bl->debugLevel >= 5) Gd::out.printDebug("Debug: Server is calling RPC method: " + method);
 
         return localMethodIterator->second(parameters);
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
 }
@@ -444,7 +444,7 @@ BaseLib::PVariable ZWave::sendPacket(BaseLib::PArray& parameters)
 
         if(!_serial)
         {
-            GD::out.printError("Error: Couldn't write to device, because the device descriptor is not valid: " + GD::settings.device());
+            Gd::out.printError("Error: Couldn't write to device, because the device descriptor is not valid: " + Gd::settings.device());
             return BaseLib::Variable::createError(-1, "Serial device is not open.");
         }
 
@@ -454,7 +454,7 @@ BaseLib::PVariable ZWave::sendPacket(BaseLib::PArray& parameters)
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
 }
@@ -467,7 +467,7 @@ BaseLib::PVariable ZWave::emptyReadBuffers(BaseLib::PArray& parameters)
 
         if(!_serial)
         {
-            GD::out.printError("Error: Couldn't write to device, because the device descriptor is not valid: " + GD::settings.device());
+            Gd::out.printError("Error: Couldn't write to device, because the device descriptor is not valid: " + Gd::settings.device());
             return BaseLib::Variable::createError(-1, "Serial device is not open.");
         }
 
@@ -478,7 +478,7 @@ BaseLib::PVariable ZWave::emptyReadBuffers(BaseLib::PArray& parameters)
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
 }

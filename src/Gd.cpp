@@ -28,18 +28,18 @@
  * files in the program, then also delete it here.
 */
 
-#include "GD.h"
+#include "Gd.h"
 
-std::unique_ptr<BaseLib::SharedObjects> GD::bl;
-BaseLib::Output GD::out;
-std::string GD::runAsUser = "";
-std::string GD::runAsGroup = "";
-std::string GD::configPath = "/etc/homegear/";
-std::string GD::pidfilePath = "";
-std::string GD::workingDirectory = "";
-std::string GD::executablePath = "";
-std::string GD::executableFile = "";
-int64_t GD::startingTime = BaseLib::HelperFunctions::getTime();
-Settings GD::settings;
-std::unique_ptr<RpcServer> GD::rpcServer;
-std::unique_ptr<UPnP> GD::upnp;
+std::unique_ptr<BaseLib::SharedObjects> Gd::bl;
+BaseLib::Output Gd::out;
+std::string Gd::runAsUser = "";
+std::string Gd::runAsGroup = "";
+std::string Gd::configPath = "/etc/homegear/";
+std::string Gd::pidfilePath = "";
+std::string Gd::workingDirectory = "";
+std::string Gd::executablePath = "";
+std::string Gd::executableFile = "";
+int64_t Gd::startingTime = BaseLib::HelperFunctions::getTime();
+Settings Gd::settings;
+std::unique_ptr<RpcServer> Gd::rpcServer;
+std::unique_ptr<UPnP> Gd::upnp;

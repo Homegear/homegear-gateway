@@ -4,8 +4,8 @@ project(homegear_gateway)
 set(CMAKE_CXX_STANDARD 11)
 
 set(SOURCE_FILES
-        src/GD.cpp
-        src/GD.h
+        src/Gd.cpp
+        src/Gd.h
         src/main.cpp
         src/RpcServer.cpp
         src/RpcServer.h
