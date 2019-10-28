@@ -85,9 +85,9 @@ bool RpcServer::start()
         else if(Gd::settings.family() == "maxculfw") _interface = std::unique_ptr<HomeMaticCulfw>(new HomeMaticCulfw(_bl));
         else if(Gd::settings.family() == "zwave") _interface = std::unique_ptr<ZWave>(new ZWave(_bl));
 #ifdef SPISUPPORT
-        else if(GD::settings.family() == "cc110ltest") _interface = std::unique_ptr<Cc110LTest>(new Cc110LTest(_bl));
-        else if(GD::settings.family() == "homematiccc1101") _interface = std::unique_ptr<HomeMaticCc1101>(new HomeMaticCc1101(_bl));
-        else if(GD::settings.family() == "maxcc1101") _interface = std::unique_ptr<HomeMaticCc1101>(new HomeMaticCc1101(_bl));
+        else if(Gd::settings.family() == "cc110ltest") _interface = std::unique_ptr<Cc110LTest>(new Cc110LTest(_bl));
+        else if(Gd::settings.family() == "homematiccc1101") _interface = std::unique_ptr<HomeMaticCc1101>(new HomeMaticCc1101(_bl));
+        else if(Gd::settings.family() == "maxcc1101") _interface = std::unique_ptr<HomeMaticCc1101>(new HomeMaticCc1101(_bl));
 #endif
 
         if(!_interface)
