@@ -30,7 +30,7 @@
 
 #include "MaxCc1101.h"
 #ifdef SPISUPPORT
-#include "../GD.h"
+#include "../Gd.h"
 
 MaxCc1101::MaxCc1101(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl)
 {

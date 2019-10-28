@@ -30,7 +30,7 @@
 
 #include "HomeMaticCc1101.h"
 #ifdef SPISUPPORT
-#include "../GD.h"
+#include "../Gd.h"
 
 HomeMaticCc1101::HomeMaticCc1101(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl)
 {
