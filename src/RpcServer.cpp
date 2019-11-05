@@ -39,6 +39,7 @@
 #include "Families/MaxCc1101.h"
 #endif
 #include "Families/ZWave.h"
+#include "Families/Zigbee.h"
 
 RpcServer::RpcServer(BaseLib::SharedObjects* bl)
 {
@@ -84,6 +85,7 @@ bool RpcServer::start()
         else if(Gd::settings.family() == "homematicculfw") _interface = std::unique_ptr<HomeMaticCulfw>(new HomeMaticCulfw(_bl));
         else if(Gd::settings.family() == "maxculfw") _interface = std::unique_ptr<HomeMaticCulfw>(new HomeMaticCulfw(_bl));
         else if(Gd::settings.family() == "zwave") _interface = std::unique_ptr<ZWave>(new ZWave(_bl));
+        else if(Gd::settings.family() == "zigbee") _interface = std::unique_ptr<Zigbee>(new Zigbee(_bl));
 #ifdef SPISUPPORT
         else if(Gd::settings.family() == "cc110ltest") _interface = std::unique_ptr<Cc110LTest>(new Cc110LTest(_bl));
         else if(Gd::settings.family() == "homematiccc1101") _interface = std::unique_ptr<HomeMaticCc1101>(new HomeMaticCc1101(_bl));
