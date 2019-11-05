@@ -65,7 +65,7 @@ private:
 
     void Reset()
     {
-        _serial.reset(new BaseLib::SerialReaderWriter(_bl, Gd::settings.device(), /*57600*/115200, 0, true, -1));
+        _serial.reset(new BaseLib::SerialReaderWriter(_bl, Gd::settings.device(), 115200, 0, true, -1));
     }
 
     void Close()

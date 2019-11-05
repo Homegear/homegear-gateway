@@ -272,7 +272,7 @@ void ZWave::listen()
 
                 if(data.empty())
                 {
-                    if(byte == (uint8_t)ZWaveResponseCodes::ACK || byte == (uint8_t)ZWaveResponseCodes::NACK || byte == (uint8_t)ZWaveResponseCodes::CAN)
+                    if(static_cast<uint8_t>(byte) == (uint8_t)ZWaveResponseCodes::ACK || static_cast<uint8_t>(byte) == (uint8_t)ZWaveResponseCodes::NACK || static_cast<uint8_t>(byte) == (uint8_t)ZWaveResponseCodes::CAN)
                     {
                         data.push_back(byte);
 
@@ -281,7 +281,7 @@ void ZWave::listen()
                         data.clear();
                         continue;
                     }
-                    else if(byte != (uint8_t)ZWaveResponseCodes::SOF)
+                    else if(static_cast<uint8_t>(byte) != (uint8_t)ZWaveResponseCodes::SOF)
                     {
                         Gd::out.printWarning("Warning: Unknown start byte received: " + BaseLib::HelperFunctions::getHexString(byte));
 

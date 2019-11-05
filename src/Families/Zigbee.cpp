@@ -228,7 +228,7 @@ void Zigbee::listen()
 
                 if(data.empty())
                 {
-                    if(byte != 0xFE)
+                    if(static_cast<uint8_t>(byte) != 0xFE)
                     {
                         Gd::out.printWarning("Warning: Unknown start byte received: " + BaseLib::HelperFunctions::getHexString(byte));
 
