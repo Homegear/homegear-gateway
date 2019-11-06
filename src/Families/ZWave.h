@@ -99,7 +99,11 @@ private:
 
     std::atomic_bool _stopped;
     std::atomic_int _tryCount;
+
     std::atomic_bool _emptyReadBuffers;
+    std::mutex _mutex;
+    std::condition_variable _cv;
+
 
     int64_t lastSOFtime;
 

@@ -32,7 +32,7 @@
 #include "Zigbee.h"
 
 
-Zigbee::Zigbee(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl), _stopCallbackThread(false), _stopped(true), _tryCount(10), _emptyReadBuffers(true), lastSOFtime(0)
+Zigbee::Zigbee(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl), _stopCallbackThread(false), _stopped(true), _tryCount(30), _emptyReadBuffers(true), lastSOFtime(0)
 {
     try
     {
@@ -72,7 +72,6 @@ void Zigbee::start()
         }
 
         Reset();
-        _serial->openDevice(false, false, false);
         if(!Open()) return;
 
         _stopCallbackThread = false;
@@ -196,7 +195,12 @@ void Zigbee::listen()
                 else if (_emptyReadBuffers)
                 {
                     EmptyReadBuffers(_tryCount);
+
+                    std::unique_lock<std::mutex> lock(_mutex);
                     _emptyReadBuffers = false;
+                    lock.unlock();
+                    _cv.notify_all();
+
                     continue;
                 }
 
@@ -395,7 +399,10 @@ BaseLib::PVariable Zigbee::emptyReadBuffers(BaseLib::PArray& parameters)
         }
 
         _tryCount = parameters->at(1)->integerValue64;
+
+        std::unique_lock<std::mutex> lock(_mutex);
         _emptyReadBuffers = true;
+        _cv.wait_for(lock, std::chrono::milliseconds(_tryCount * 200), [&] { return !_emptyReadBuffers; });
 
         return std::make_shared<BaseLib::Variable>();
     }

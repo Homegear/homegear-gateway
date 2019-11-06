@@ -72,7 +72,6 @@ void ZWave::start()
         }
 
         Reset();
-        _serial->openDevice(false, false, false);
         if(!Open()) return;
 
         _stopCallbackThread = false;
@@ -235,7 +234,12 @@ void ZWave::listen()
                 else if (_emptyReadBuffers)
                 {
                     EmptyReadBuffers(_tryCount);
+
+                    std::unique_lock<std::mutex> lock(_mutex);
                     _emptyReadBuffers = false;
+                    lock.unlock();
+                    _cv.notify_all();
+
                     continue;
                 }
 
@@ -472,7 +476,10 @@ BaseLib::PVariable ZWave::emptyReadBuffers(BaseLib::PArray& parameters)
         }
 
         _tryCount = parameters->at(1)->integerValue64;
+
+        std::unique_lock<std::mutex> lock(_mutex);
         _emptyReadBuffers = true;
+        _cv.wait_for(lock, std::chrono::milliseconds(_tryCount * 200), [&] { return !_emptyReadBuffers; });
 
         return std::make_shared<BaseLib::Variable>();
     }
