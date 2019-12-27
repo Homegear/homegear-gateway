@@ -26,6 +26,15 @@ case $1 in
 		password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 64 | head -n 1)
 		sed -i "s/^#configurationPassword .*/configurationPassword = ${password}/g" /etc/homegear/gateway.conf
 
+		echo "************************************************************************"
+		echo "************************************************************************"
+		echo "*** Your confiration password is:                                    ***"
+		echo "*** ${password} ***"
+		echo "***                                                                  ***"
+		echo "*** Please pass it to Homegear.                                      ***"
+		echo "************************************************************************"
+		echo "************************************************************************"
+
 		if test ! -e /var/lib/homegear-gateway/dh.pem; then
 			if [[ $DIALOG_OUTPUT ]]; then
 				platform=$(dpkg --print-architecture)
@@ -63,7 +72,10 @@ case $1 in
 				if test -f /usr/lib/insserv/insserv; then
 					/usr/lib/insserv/insserv homegear-gateway
 				else
-					insserv homegear-gateway
+					command -v insserv > /dev/null 2>&1
+					if [ $? -eq 0 ]; then
+						insserv homegear-gateway
+					fi
 				fi
 			else
 				systemctl enable homegear-gateway.service

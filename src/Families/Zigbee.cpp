@@ -29,17 +29,17 @@
 */
 
 #include "../Gd.h"
-#include "ZWave.h"
+#include "Zigbee.h"
 
 
-ZWave::ZWave(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl), _stopCallbackThread(false), _stopped(true), _tryCount(30), _emptyReadBuffers(true), lastSOFtime(0)
+Zigbee::Zigbee(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl), _stopCallbackThread(false), _stopped(true), _tryCount(30), _emptyReadBuffers(true), lastSOFtime(0)
 {
     try
     {
-        _familyId = ZWAVE_FAMILY_ID;
+        _familyId = ZIGBEE_FAMILY_ID;
 
-        _localRpcMethods.emplace("emptyReadBuffers", std::bind(&ZWave::emptyReadBuffers, this, std::placeholders::_1));
-        _localRpcMethods.emplace("sendPacket", std::bind(&ZWave::sendPacket, this, std::placeholders::_1));
+        _localRpcMethods.emplace("emptyReadBuffers", std::bind(&Zigbee::emptyReadBuffers, this, std::placeholders::_1));
+        _localRpcMethods.emplace("sendPacket", std::bind(&Zigbee::sendPacket, this, std::placeholders::_1));
 
         start();
     }
@@ -49,7 +49,7 @@ ZWave::ZWave(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl), _stopCal
     }
 }
 
-ZWave::~ZWave()
+Zigbee::~Zigbee()
 {
     try
     {
@@ -61,13 +61,13 @@ ZWave::~ZWave()
     }
 }
 
-void ZWave::start()
+void Zigbee::start()
 {
     try
     {
         if(Gd::settings.device().empty())
         {
-            Gd::out.printError("Error: No device defined for family ZWave. Please specify it in \"gateway.conf\".");
+            Gd::out.printError("Error: No device defined for family Zigbee. Please specify it in \"gateway.conf\".");
             return;
         }
 
@@ -76,7 +76,7 @@ void ZWave::start()
 
         _stopCallbackThread = false;
 
-        _bl->threadManager.start(_listenThread, true, &ZWave::listen, this);
+        _bl->threadManager.start(_listenThread, true, &Zigbee::listen, this);
 
         //sendReconnect();
     }
@@ -86,7 +86,7 @@ void ZWave::start()
     }
 }
 
-void ZWave::stop()
+void Zigbee::stop()
 {
     try
     {
@@ -103,9 +103,9 @@ void ZWave::stop()
     }
 }
 
-uint8_t ZWave::getCrc8(const std::vector<uint8_t>& packet)
+uint8_t Zigbee::getCrc8(const std::vector<uint8_t>& packet)
 {
-    uint8_t crc8 = 0xFF;
+    uint8_t crc8 = 0x0;
 
     for(uint32_t i = 1; i < packet.size() - 1; ++i)
         crc8 ^= packet[i];
@@ -113,7 +113,7 @@ uint8_t ZWave::getCrc8(const std::vector<uint8_t>& packet)
     return crc8;
 }
 
-void ZWave::rawSend(const std::vector<uint8_t>& packet)
+void Zigbee::rawSend(const std::vector<uint8_t>& packet)
 {
     try
     {
@@ -129,47 +129,8 @@ void ZWave::rawSend(const std::vector<uint8_t>& packet)
 }
 
 
-void ZWave::sendAck()
-{
-    try
-    {
-        std::vector<uint8_t> ack{ (uint8_t)ZWaveResponseCodes::ACK };
-        rawSend(ack);
-    }
-    catch(const std::exception& ex)
-    {
-        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-}
 
-void ZWave::sendNack()
-{
-    try
-    {
-        std::vector<uint8_t> nack{ (uint8_t)ZWaveResponseCodes::NACK };
-        rawSend(nack);
-    }
-    catch(const std::exception& ex)
-    {
-        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-}
-
-void ZWave::sendCan()
-{
-    try
-    {
-        std::vector<uint8_t> can{ (uint8_t)ZWaveResponseCodes::CAN };
-        rawSend(can);
-    }
-    catch(const std::exception& ex)
-    {
-        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-}
-
-
-void ZWave::EmptyReadBuffers(int tryCount)
+void Zigbee::EmptyReadBuffers(int tryCount)
 {
     char byte = 0;
     int cnt = 0;
@@ -187,14 +148,14 @@ void ZWave::EmptyReadBuffers(int tryCount)
     while(0 == result && cnt < tryCount && !_stopCallbackThread);
 }
 
-void ZWave::listen()
+void Zigbee::listen()
 {
     try
     {
         Gd::out.printInfo("Listen thread starting");
 
         std::vector<uint8_t> data;
-        data.reserve(200);
+        data.reserve(255);
         char byte = 0;
         int32_t result = 0;
         uint32_t packetSize = 0;
@@ -263,11 +224,6 @@ void ZWave::listen()
                     if(!data.empty())
                     {
                         Gd::out.printWarning("Warning: Incomplete packet received: " + BaseLib::HelperFunctions::getHexString(data));
-                        //sendNack();
-                        data.clear();
-
-                        data.push_back((uint8_t)ZWaveResponseCodes::NACK);
-                        _processRawPacket(data);
                         data.clear();
                     }
 
@@ -276,22 +232,10 @@ void ZWave::listen()
 
                 if(data.empty())
                 {
-                    if(static_cast<uint8_t>(byte) == (uint8_t)ZWaveResponseCodes::ACK || static_cast<uint8_t>(byte) == (uint8_t)ZWaveResponseCodes::NACK || static_cast<uint8_t>(byte) == (uint8_t)ZWaveResponseCodes::CAN)
-                    {
-                        data.push_back(byte);
-
-                        _processRawPacket(data);
-
-                        data.clear();
-                        continue;
-                    }
-                    else if(static_cast<uint8_t>(byte) != (uint8_t)ZWaveResponseCodes::SOF)
+                    if(static_cast<uint8_t>(byte) != 0xFE)
                     {
                         Gd::out.printWarning("Warning: Unknown start byte received: " + BaseLib::HelperFunctions::getHexString(byte));
 
-                        //sendNack();
-                        data.push_back((uint8_t)ZWaveResponseCodes::NACK);
-                        _processRawPacket(data);
                         data.clear();
 
                         continue;
@@ -303,21 +247,7 @@ void ZWave::listen()
                 if(0 == packetSize && 2 == data.size())
                 {
                     packetSize = data[1];
-                    if(0 == packetSize)
-                    {
-                        Gd::out.printError("Error: Header has invalid size information: " + BaseLib::HelperFunctions::getHexString(data));
-
-                        data.clear();
-
-                        //sendNack();
-
-                        data.push_back((uint8_t)ZWaveResponseCodes::NACK);
-                        _processRawPacket(data);
-                        data.clear();
-
-                        continue;
-                    }
-                    packetSize += 2;
+                    packetSize += 5;
                 }
 
                 if(packetSize > 0 && data.size() == packetSize)
@@ -328,16 +258,9 @@ void ZWave::listen()
                         Gd::out.printError("Error: CRC failed for packet: " + BaseLib::HelperFunctions::getHexString(data));
                         packetSize = 0;
                         data.clear();
-                        sendNack();
-
-                        data.push_back((uint8_t)ZWaveResponseCodes::NACK);
-                        _processRawPacket(data);
-                        data.clear();
 
                         continue;
                     }
-
-                    sendAck();
 
                     packetSize = 0;
 
@@ -360,17 +283,17 @@ void ZWave::listen()
     Gd::out.printInfo("Listen thread stopped");
 }
 
-void ZWave::_processRawPacket(std::vector<uint8_t> data)
+void Zigbee::_processRawPacket(std::vector<uint8_t> data)
 {
     processRawPacket(data);
 }
 
 
-void ZWave::processRawPacket(std::vector<uint8_t>& data)
+void Zigbee::processRawPacket(std::vector<uint8_t>& data)
 {
     BaseLib::PArray parameters = std::make_shared<BaseLib::Array>();
     parameters->reserve(2);
-    parameters->push_back(std::make_shared<BaseLib::Variable>(ZWAVE_FAMILY_ID));
+    parameters->push_back(std::make_shared<BaseLib::Variable>(ZIGBEE_FAMILY_ID));
     parameters->push_back(std::make_shared<BaseLib::Variable>(data));
 
     auto result = _invoke("packetReceived", parameters);
@@ -381,13 +304,13 @@ void ZWave::processRawPacket(std::vector<uint8_t>& data)
 }
 
 
-void ZWave::sendReconnect()
+void Zigbee::sendReconnect()
 {
     Gd::out.printInfo("Calling reconnect on the other end");
 
     BaseLib::PArray parameters = std::make_shared<BaseLib::Array>();
     parameters->reserve(1);
-    parameters->push_back(std::make_shared<BaseLib::Variable>(ZWAVE_FAMILY_ID));
+    parameters->push_back(std::make_shared<BaseLib::Variable>(ZIGBEE_FAMILY_ID));
 
     auto result = _invoke("reconnect", parameters);
     if(result->errorStruct && result->structValue->at("faultCode")->integerValue != -1)
@@ -396,7 +319,7 @@ void ZWave::sendReconnect()
     }
 }
 
-void ZWave::reconnect()
+void Zigbee::reconnect()
 {
     try
     {
@@ -420,7 +343,7 @@ void ZWave::reconnect()
     }
 }
 
-BaseLib::PVariable ZWave::callMethod(std::string& method, BaseLib::PArray parameters)
+BaseLib::PVariable Zigbee::callMethod(std::string& method, BaseLib::PArray parameters)
 {
     try
     {
@@ -440,7 +363,7 @@ BaseLib::PVariable ZWave::callMethod(std::string& method, BaseLib::PArray parame
 
 
 //{{{ RPC methods
-BaseLib::PVariable ZWave::sendPacket(BaseLib::PArray& parameters)
+BaseLib::PVariable Zigbee::sendPacket(BaseLib::PArray& parameters)
 {
     try
     {
@@ -463,7 +386,7 @@ BaseLib::PVariable ZWave::sendPacket(BaseLib::PArray& parameters)
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
 }
 
-BaseLib::PVariable ZWave::emptyReadBuffers(BaseLib::PArray& parameters)
+BaseLib::PVariable Zigbee::emptyReadBuffers(BaseLib::PArray& parameters)
 {
     try
     {

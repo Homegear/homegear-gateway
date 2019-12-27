@@ -29,7 +29,7 @@
 */
 
 #include "Settings.h"
-#include "GD.h"
+#include "Gd.h"
 
 Settings::Settings()
 {
@@ -45,6 +45,9 @@ void Settings::reset()
 	_debugLevel = 3;
 	_memoryDebugging = false;
 	_enableCoreDumps = true;
+    _waitForIp4OnInterface = "";
+    _waitForIp6OnInterface = "";
+    _waitForCorrectTime = true;
 	_workingDirectory = _executablePath;
 	_logFilePath = "/var/log/homegear-gateway/";
     _dataPath = "/var/lib/homegear-gateway/";
@@ -72,7 +75,7 @@ void Settings::reset()
 
 bool Settings::changed()
 {
-	if(GD::bl->io.getFileLastModifiedTime(_path) != _lastModified)
+	if(Gd::bl->io.getFileLastModifiedTime(_path) != _lastModified)
 	{
 		return true;
 	}
@@ -93,7 +96,7 @@ void Settings::load(std::string filename, std::string executablePath)
 
 		if (!(fin = fopen(filename.c_str(), "r")))
 		{
-			GD::bl->out.printError("Unable to open config file: " + filename + ". " + strerror(errno));
+			Gd::bl->out.printError("Unable to open config file: " + filename + ". " + strerror(errno));
 			return;
 		}
 
@@ -126,157 +129,172 @@ void Settings::load(std::string filename, std::string executablePath)
 				{
 					_listenAddress = value;
 					if(_listenAddress.empty()) _listenAddress = "::";
-					GD::bl->out.printDebug("Debug: listenAddress set to " + _listenAddress);
+					Gd::bl->out.printDebug("Debug: listenAddress set to " + _listenAddress);
 				}
 				else if(name == "port")
 				{
 					_port = BaseLib::Math::getNumber(value);
 					if(_port < 1 || _port > 65535) _port = 2017;
-					GD::bl->out.printDebug("Debug: port set to " + std::to_string(_port));
+					Gd::bl->out.printDebug("Debug: port set to " + std::to_string(_port));
 				}
 				else if(name == "portunconfigured")
 				{
 					_portUnconfigured = BaseLib::Math::getNumber(value);
 					if(_portUnconfigured < 1 || _portUnconfigured > 65535) _portUnconfigured = 2018;
-					GD::bl->out.printDebug("Debug: portUnconfigured set to " + std::to_string(_portUnconfigured));
+					Gd::bl->out.printDebug("Debug: portUnconfigured set to " + std::to_string(_portUnconfigured));
 				}
 				else if(name == "runasuser")
 				{
 					_runAsUser = value;
-					GD::bl->out.printDebug("Debug: runAsUser set to " + _runAsUser);
+					Gd::bl->out.printDebug("Debug: runAsUser set to " + _runAsUser);
 				}
 				else if(name == "runasgroup")
 				{
 					_runAsGroup = value;
-					GD::bl->out.printDebug("Debug: runAsGroup set to " + _runAsGroup);
+					Gd::bl->out.printDebug("Debug: runAsGroup set to " + _runAsGroup);
 				}
 				else if(name == "debuglevel")
 				{
 					_debugLevel = BaseLib::Math::getNumber(value);
 					if(_debugLevel < 0) _debugLevel = 3;
-					GD::bl->debugLevel = _debugLevel;
-					GD::bl->out.printDebug("Debug: debugLevel set to " + std::to_string(_debugLevel));
+					Gd::bl->debugLevel = _debugLevel;
+					Gd::bl->out.printDebug("Debug: debugLevel set to " + std::to_string(_debugLevel));
 				}
 				else if(name == "memorydebugging")
 				{
 					if(BaseLib::HelperFunctions::toLower(value) == "true") _memoryDebugging = true;
-					GD::bl->out.printDebug("Debug: memoryDebugging set to " + std::to_string(_memoryDebugging));
+					Gd::bl->out.printDebug("Debug: memoryDebugging set to " + std::to_string(_memoryDebugging));
 				}
 				else if(name == "enablecoredumps")
 				{
 					if(BaseLib::HelperFunctions::toLower(value) == "false") _enableCoreDumps = false;
-					GD::bl->out.printDebug("Debug: enableCoreDumps set to " + std::to_string(_enableCoreDumps));
+					Gd::bl->out.printDebug("Debug: enableCoreDumps set to " + std::to_string(_enableCoreDumps));
 				}
+                else if(name == "waitforip4oninterface")
+                {
+                    _waitForIp4OnInterface = value;
+                    Gd::bl->out.printDebug("Debug: waitForIp4OnInterface set to " + _waitForIp4OnInterface);
+                }
+                else if(name == "waitforip6oninterface")
+                {
+                    _waitForIp6OnInterface = value;
+                    Gd::bl->out.printDebug("Debug: waitForIp6OnInterface set to " + _waitForIp6OnInterface);
+                }
+                else if(name == "waitforcorrecttime")
+                {
+                    _waitForCorrectTime = (BaseLib::HelperFunctions::toLower(value) == "true");
+                    Gd::bl->out.printDebug("Debug: waitForCorrectTime set to " + std::to_string(_waitForCorrectTime));
+                }
 				else if(name == "workingdirectory")
 				{
 					_workingDirectory = value;
 					if(_workingDirectory.empty()) _workingDirectory = _executablePath;
 					if(_workingDirectory.back() != '/') _workingDirectory.push_back('/');
-					GD::bl->out.printDebug("Debug: workingDirectory set to " + _workingDirectory);
+					Gd::bl->out.printDebug("Debug: workingDirectory set to " + _workingDirectory);
 				}
 				else if(name == "logfilepath")
 				{
 					_logFilePath = value;
 					if(_logFilePath.empty()) _logFilePath = "/var/log/homegear-gateway/";
 					if(_logFilePath.back() != '/') _logFilePath.push_back('/');
-					GD::bl->out.printDebug("Debug: logfilePath set to " + _logFilePath);
+					Gd::bl->out.printDebug("Debug: logfilePath set to " + _logFilePath);
 				}
                 else if(name == "datapath")
                 {
                     _dataPath = value;
                     if(_dataPath.empty()) _dataPath = "/var/lib/homegear-gateway/";
                     if(_dataPath.back() != '/') _dataPath.push_back('/');
-                    GD::bl->out.printDebug("Debug: dataPath set to " + _dataPath);
+                    Gd::bl->out.printDebug("Debug: dataPath set to " + _dataPath);
                 }
 				else if(name == "lockfilepath")
 				{
 					_lockFilePath = value;
 					if(_lockFilePath.empty()) _lockFilePath = "/var/lock/";
 					if(_lockFilePath.back() != '/') _lockFilePath.push_back('/');
-					GD::bl->settings.setLockFilePath(_lockFilePath);
-					GD::bl->out.printDebug("Debug: lockfilePath set to " + _lockFilePath);
+					Gd::bl->settings.setLockFilePath(_lockFilePath);
+					Gd::bl->out.printDebug("Debug: lockfilePath set to " + _lockFilePath);
 				}
                 else if(name == "gpiopath")
                 {
                     _gpioPath = value;
                     if(_gpioPath.empty()) _gpioPath = "/sys/class/gpio/";
                     if(_gpioPath.back() != '/') _gpioPath.push_back('/');
-                    GD::bl->out.printDebug("Debug: gpioPath set to " + _gpioPath);
+                    Gd::bl->out.printDebug("Debug: gpioPath set to " + _gpioPath);
                 }
 				else if(name == "securememorysize")
 				{
 					_secureMemorySize = BaseLib::Math::getNumber(value);
 					//Allow 0 => disable secure memory. 16384 is minimum size. Values smaller than 16384 are set to 16384 by gcrypt: https://gnupg.org/documentation/manuals/gcrypt-devel/Controlling-the-library.html
 					if(_secureMemorySize < 0) _secureMemorySize = 1;
-					GD::bl->out.printDebug("Debug: secureMemorySize set to " + std::to_string(_secureMemorySize));
+					Gd::bl->out.printDebug("Debug: secureMemorySize set to " + std::to_string(_secureMemorySize));
 				}
 				else if(name == "cafile")
 				{
 					_caFile = value;
-					GD::bl->out.printDebug("Debug: caFile set to " + _caFile);
+					Gd::bl->out.printDebug("Debug: caFile set to " + _caFile);
 				}
 				else if(name == "certpath")
 				{
 					_certPath = value;
-					GD::bl->out.printDebug("Debug: certPath set to " + _certPath);
+					Gd::bl->out.printDebug("Debug: certPath set to " + _certPath);
 				}
 				else if(name == "keypath")
 				{
 					_keyPath = value;
-					GD::bl->out.printDebug("Debug: keyPath set to " + _keyPath);
+					Gd::bl->out.printDebug("Debug: keyPath set to " + _keyPath);
 				}
 				else if(name == "dhpath")
 				{
 					_dhPath = value;
-					GD::bl->out.printDebug("Debug: dhPath set to " + _dhPath);
+					Gd::bl->out.printDebug("Debug: dhPath set to " + _dhPath);
 				}
 				else if(name == "configurationpassword")
 				{
 					_configurationPassword = value;
-					GD::bl->out.printDebug("Debug: configurationPassword was set");
+					Gd::bl->out.printDebug("Debug: configurationPassword was set");
 				}
                 else if(name == "enableupnp")
                 {
                     _enableUpnp = BaseLib::HelperFunctions::toLower(value) == "true";
-                    GD::out.printDebug("Debug: enableUPnP set to " + std::to_string(_enableUpnp));
+                    Gd::out.printDebug("Debug: enableUPnP set to " + std::to_string(_enableUpnp));
                 }
                 else if(name == "upnpipaddress")
                 {
                     _upnpIpAddress = value;
-                    GD::out.printDebug("Debug: uPnPIpAddress set to " + _upnpIpAddress);
+                    Gd::out.printDebug("Debug: uPnPIpAddress set to " + _upnpIpAddress);
                 }
                 else if(name == "upnpudn")
                 {
                     _upnpUdn = value;
-                    GD::out.printDebug("Debug: uPnPUDN set to " + _upnpUdn);
+                    Gd::out.printDebug("Debug: uPnPUDN set to " + _upnpUdn);
                 }
                 else if(name == "family")
                 {
                     _family = BaseLib::HelperFunctions::toLower(value);
-                    GD::bl->out.printDebug("Debug: family set to " + _family);
+                    Gd::bl->out.printDebug("Debug: family set to " + _family);
                 }
                 else if(name == "device")
                 {
                     _device = value;
-                    GD::bl->out.printDebug("Debug: device set to " + _device);
+                    Gd::bl->out.printDebug("Debug: device set to " + _device);
                 }
 				else if(name == "gpio1")
 				{
 					_gpio1 = BaseLib::Math::getNumber(value);
 					if(_gpio1 < 0) _gpio1 =  -1;
-					GD::bl->out.printDebug("Debug: gpio1 set to " + std::to_string(_gpio1));
+					Gd::bl->out.printDebug("Debug: gpio1 set to " + std::to_string(_gpio1));
 				}
 				else if(name == "gpio2")
 				{
 					_gpio2 = BaseLib::Math::getNumber(value);
 					if(_gpio2 < 0) _gpio2 =  -1;
-					GD::bl->out.printDebug("Debug: gpio2 set to " + std::to_string(_gpio2));
+					Gd::bl->out.printDebug("Debug: gpio2 set to " + std::to_string(_gpio2));
 				}
 				else if(name == "oscillatorfrequency")
 				{
 					_oscillatorFrequency = BaseLib::Math::getNumber(value);
 					if(_oscillatorFrequency < 0) _oscillatorFrequency = -1;
-					GD::bl->out.printDebug("Debug: oscillatorFrequency set to " + std::to_string(_oscillatorFrequency));
+					Gd::bl->out.printDebug("Debug: oscillatorFrequency set to " + std::to_string(_oscillatorFrequency));
 				}
 				else if(name == "interruptpin")
 				{
@@ -284,21 +302,21 @@ void Settings::load(std::string filename, std::string executablePath)
 					if(number >= 0)
 					{
 						_interruptPin = number;
-						GD::bl->out.printDebug("Debug: interruptPin set to " + std::to_string(_interruptPin));
+						Gd::bl->out.printDebug("Debug: interruptPin set to " + std::to_string(_interruptPin));
 					}
 				}
 				else
 				{
-					GD::bl->out.printWarning("Warning: Setting not found: " + std::string(input));
+					Gd::bl->out.printWarning("Warning: Setting not found: " + std::string(input));
 				}
 			}
 		}
 
 		fclose(fin);
-		_lastModified = GD::bl->io.getFileLastModifiedTime(filename);
+		_lastModified = Gd::bl->io.getFileLastModifiedTime(filename);
 	}
 	catch(const std::exception& ex)
     {
-		GD::bl->out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+		Gd::bl->out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }

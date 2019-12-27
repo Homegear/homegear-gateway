@@ -28,19 +28,19 @@
  * files in the program, then also delete it here.
 */
 
-#ifndef HOMEGEAR_GATEWAY_ZWAVE_H
-#define HOMEGEAR_GATEWAY_ZWAVE_H
+#ifndef HOMEGEAR_GATEWAY_ZIGBEE_H
+#define HOMEGEAR_GATEWAY_ZIGBEE_H
 
 #include "ICommunicationInterface.h"
 
 
-#define ZWAVE_FAMILY_ID 17
+#define ZIGBEE_FAMILY_ID 26
 
-class ZWave : public ICommunicationInterface
+class Zigbee : public ICommunicationInterface
 {
 public:
-    ZWave(BaseLib::SharedObjects* bl);
-    virtual ~ZWave();
+    Zigbee(BaseLib::SharedObjects* bl);
+    virtual ~Zigbee();
     virtual BaseLib::PVariable callMethod(std::string& method, BaseLib::PArray parameters);
 private:
 
@@ -65,7 +65,7 @@ private:
 
     void Reset()
     {
-        _serial.reset(new BaseLib::SerialReaderWriter(_bl, Gd::settings.device(), /*57600*/115200, 0, true, -1));
+        _serial.reset(new BaseLib::SerialReaderWriter(_bl, Gd::settings.device(), 115200, 0, true, -1));
     }
 
     void Close()
@@ -84,14 +84,6 @@ private:
         _stopped = stop;
     }
 
-    enum class ZWaveResponseCodes : uint8_t
-    {
-        SOF = 0x01, // start of frame
-        ACK = 0x06, // acknowledge
-        NACK = 0x15, // not acknowledge
-        CAN = 0x18 // cancel, send again
-    };
-
     std::atomic_bool _stopCallbackThread;
     std::thread _listenThread;
 
@@ -104,7 +96,6 @@ private:
     std::mutex _mutex;
     std::condition_variable _cv;
 
-
     int64_t lastSOFtime;
 
     void start();
@@ -115,9 +106,6 @@ private:
     void EmptyReadBuffers(int tryCount = 30);
     void rawSend(const std::vector<uint8_t>& packet);
     void listen();
-    void sendAck();
-    void sendNack();
-    void sendCan();
 
     void processRawPacket(std::vector<uint8_t>& data);
     void _processRawPacket(std::vector<uint8_t> data);
