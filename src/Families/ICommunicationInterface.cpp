@@ -29,7 +29,7 @@
 */
 
 #include "ICommunicationInterface.h"
-#include "../GD.h"
+#include "../Gd.h"
 
 ICommunicationInterface::ICommunicationInterface(BaseLib::SharedObjects* bl)
 {
@@ -39,6 +39,6 @@ ICommunicationInterface::ICommunicationInterface(BaseLib::SharedObjects* bl)
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }

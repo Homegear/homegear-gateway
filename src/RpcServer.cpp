@@ -29,7 +29,7 @@
 */
 
 #include "RpcServer.h"
-#include "GD.h"
+#include "Gd.h"
 #include "Families/EnOcean.h"
 #include "Families/HomeMaticCulfw.h"
 #include "Families/MaxCulfw.h"
@@ -39,6 +39,7 @@
 #include "Families/MaxCc1101.h"
 #endif
 #include "Families/ZWave.h"
+#include "Families/Zigbee.h"
 
 RpcServer::RpcServer(BaseLib::SharedObjects* bl)
 {
@@ -74,25 +75,26 @@ bool RpcServer::start()
     {
         _unconfigured = false;
 
-        if(GD::settings.family().empty())
+        if(Gd::settings.family().empty())
         {
-            GD::out.printError("Error: Setting family in gateway.conf is empty.");
+            Gd::out.printError("Error: Setting family in gateway.conf is empty.");
             return false;
         }
 
-        if(GD::settings.family() == "enocean") _interface = std::unique_ptr<EnOcean>(new EnOcean(_bl));
-        else if(GD::settings.family() == "homematicculfw") _interface = std::unique_ptr<HomeMaticCulfw>(new HomeMaticCulfw(_bl));
-        else if(GD::settings.family() == "maxculfw") _interface = std::unique_ptr<HomeMaticCulfw>(new HomeMaticCulfw(_bl));
-        else if(GD::settings.family() == "zwave") _interface = std::unique_ptr<ZWave>(new ZWave(_bl));
+        if(Gd::settings.family() == "enocean") _interface = std::unique_ptr<EnOcean>(new EnOcean(_bl));
+        else if(Gd::settings.family() == "homematicculfw") _interface = std::unique_ptr<HomeMaticCulfw>(new HomeMaticCulfw(_bl));
+        else if(Gd::settings.family() == "maxculfw") _interface = std::unique_ptr<HomeMaticCulfw>(new HomeMaticCulfw(_bl));
+        else if(Gd::settings.family() == "zwave") _interface = std::unique_ptr<ZWave>(new ZWave(_bl));
+        else if(Gd::settings.family() == "zigbee") _interface = std::unique_ptr<Zigbee>(new Zigbee(_bl));
 #ifdef SPISUPPORT
-        else if(GD::settings.family() == "cc110ltest") _interface = std::unique_ptr<Cc110LTest>(new Cc110LTest(_bl));
-        else if(GD::settings.family() == "homematiccc1101") _interface = std::unique_ptr<HomeMaticCc1101>(new HomeMaticCc1101(_bl));
-        else if(GD::settings.family() == "maxcc1101") _interface = std::unique_ptr<HomeMaticCc1101>(new HomeMaticCc1101(_bl));
+        else if(Gd::settings.family() == "cc110ltest") _interface = std::unique_ptr<Cc110LTest>(new Cc110LTest(_bl));
+        else if(Gd::settings.family() == "homematiccc1101") _interface = std::unique_ptr<HomeMaticCc1101>(new HomeMaticCc1101(_bl));
+        else if(Gd::settings.family() == "maxcc1101") _interface = std::unique_ptr<HomeMaticCc1101>(new HomeMaticCc1101(_bl));
 #endif
 
         if(!_interface)
         {
-            GD::out.printError("Error: Unknown family: " + GD::settings.family() + ". Please correct it in gateway.conf.");
+            Gd::out.printError("Error: Unknown family: " + Gd::settings.family() + ". Please correct it in gateway.conf.");
             return false;
         }
 
@@ -103,8 +105,8 @@ bool RpcServer::start()
         serverInfo.useSsl = true;
         BaseLib::TcpSocket::PCertificateInfo certificateInfo = std::make_shared<BaseLib::TcpSocket::CertificateInfo>();
 
-        std::string caFile = GD::settings.caFile();
-        if(caFile.empty()) caFile = GD::settings.dataPath() + "ca.crt";
+        std::string caFile = Gd::settings.caFile();
+        if(caFile.empty()) caFile = Gd::settings.dataPath() + "ca.crt";
         if(!BaseLib::Io::fileExists(caFile))
         {
             caFile = "";
@@ -113,8 +115,8 @@ bool RpcServer::start()
         }
         certificateInfo->caFile = caFile;
 
-        std::string certFile = GD::settings.certPath();
-        if(certFile.empty()) certFile = GD::settings.dataPath() + "gateway.crt";
+        std::string certFile = Gd::settings.certPath();
+        if(certFile.empty()) certFile = Gd::settings.dataPath() + "gateway.crt";
         if(!BaseLib::Io::fileExists(certFile))
         {
             certFile = "";
@@ -123,8 +125,8 @@ bool RpcServer::start()
         }
         certificateInfo->certFile = certFile;
 
-        std::string keyFile = GD::settings.keyPath();
-        if(keyFile.empty()) keyFile = GD::settings.dataPath() + "gateway.key";
+        std::string keyFile = Gd::settings.keyPath();
+        if(keyFile.empty()) keyFile = Gd::settings.dataPath() + "gateway.key";
         if(!BaseLib::Io::fileExists(keyFile))
         {
             keyFile = "";
@@ -133,35 +135,35 @@ bool RpcServer::start()
         }
         certificateInfo->keyFile = keyFile;
 
-        if(_unconfigured && GD::settings.configurationPassword().empty())
+        if(_unconfigured && Gd::settings.configurationPassword().empty())
         {
             _interface.reset();
-            GD::out.printError("Error: Gateway is unconfigured but configurationPassword is not set in gateway.conf.");
+            Gd::out.printError("Error: Gateway is unconfigured but configurationPassword is not set in gateway.conf.");
             return false;
         }
 
         if(!_unconfigured)
         {
             serverInfo.certificates.emplace("*", certificateInfo);
-            std::string dhFile = GD::settings.dhPath();
-            if(dhFile.empty()) dhFile = GD::settings.dataPath() + "dh.pem";
+            std::string dhFile = Gd::settings.dhPath();
+            if(dhFile.empty()) dhFile = Gd::settings.dataPath() + "dh.pem";
             serverInfo.dhParamFile = dhFile;
             serverInfo.requireClientCert = true;
         }
-        else GD::out.printWarning("Warning: Gateway is not fully configured yet.");
+        else Gd::out.printWarning("Warning: Gateway is not fully configured yet.");
         serverInfo.newConnectionCallback = std::bind(&RpcServer::newConnection, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         serverInfo.packetReceivedCallback = std::bind(&RpcServer::packetReceived, this, std::placeholders::_1, std::placeholders::_2);
 
         _tcpServer = std::make_shared<BaseLib::TcpSocket>(_bl, serverInfo);
         std::string boundAddress;
-        _tcpServer->startServer(GD::settings.listenAddress(), std::to_string(_unconfigured ? GD::settings.portUnconfigured() : GD::settings.port()), boundAddress);
+        _tcpServer->startServer(Gd::settings.listenAddress(), std::to_string(_unconfigured ? Gd::settings.portUnconfigured() : Gd::settings.port()), boundAddress);
         _stopped = false;
 
         return true;
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return false;
 }
@@ -180,20 +182,20 @@ void RpcServer::stop()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
 void RpcServer::restart()
 {
-    GD::out.printMessage("Restarting server.");
+    Gd::out.printMessage("Restarting server.");
 
-    GD::upnp->stop();
+    Gd::upnp->stop();
 
     stop();
     start();
 
-    GD::upnp->start();
+    Gd::upnp->start();
 }
 
 BaseLib::PVariable RpcServer::configure(BaseLib::PArray& parameters)
@@ -207,9 +209,9 @@ BaseLib::PVariable RpcServer::configure(BaseLib::PArray& parameters)
         BaseLib::Security::Gcrypt aes(GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_GCM, GCRY_CIPHER_SECURE);
 
         std::vector<uint8_t> key;
-        if(!BaseLib::Security::Hash::sha256(GD::bl->hf.getUBinary(GD::settings.configurationPassword()), key) || key.empty())
+        if(!BaseLib::Security::Hash::sha256(Gd::bl->hf.getUBinary(Gd::settings.configurationPassword()), key) || key.empty())
         {
-            GD::out.printError("Error: Could not generate SHA256 of configuration password.");
+            Gd::out.printError("Error: Could not generate SHA256 of configuration password.");
             return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
         }
         aes.setKey(key);
@@ -233,36 +235,36 @@ BaseLib::PVariable RpcServer::configure(BaseLib::PArray& parameters)
 
         auto dataIterator = data->structValue->find("caCert");
         if(dataIterator == data->structValue->end()) return BaseLib::Variable::createError(-1, "Data does not contain element \"caCert\".");
-        std::string certPath = GD::settings.dataPath() + "ca.crt";
+        std::string certPath = Gd::settings.dataPath() + "ca.crt";
         BaseLib::Io::writeFile(certPath, dataIterator->second->stringValue);
 
         dataIterator = data->structValue->find("gatewayCert");
         if(dataIterator == data->structValue->end()) return BaseLib::Variable::createError(-1, "Data does not contain element \"gatewayCert\".");
-        certPath = GD::settings.dataPath() + "gateway.crt";
+        certPath = Gd::settings.dataPath() + "gateway.crt";
         BaseLib::Io::writeFile(certPath, dataIterator->second->stringValue);
 
         dataIterator = data->structValue->find("gatewayKey");
         if(dataIterator == data->structValue->end()) return BaseLib::Variable::createError(-1, "Data does not contain element \"gatewayKey\".");
-        certPath = GD::settings.dataPath() + "gateway.key";
+        certPath = Gd::settings.dataPath() + "gateway.key";
         BaseLib::Io::writeFile(certPath, dataIterator->second->stringValue);
 
-        uid_t userId = GD::bl->hf.userId(GD::runAsUser);
-        gid_t groupId = GD::bl->hf.groupId(GD::runAsGroup);
+        uid_t userId = Gd::bl->hf.userId(Gd::runAsUser);
+        gid_t groupId = Gd::bl->hf.groupId(Gd::runAsGroup);
 
-        if(chown(certPath.c_str(), userId, groupId) == -1) GD::out.printWarning("Warning: Could net set owner on " + certPath + ": " + std::string(strerror(errno)));
-        if(chmod(certPath.c_str(), S_IRUSR | S_IWUSR) == -1) GD::out.printWarning("Warning: Could net set permissions on " + certPath + ": " + std::string(strerror(errno)));;
+        if(chown(certPath.c_str(), userId, groupId) == -1) Gd::out.printWarning("Warning: Could net set owner on " + certPath + ": " + std::string(strerror(errno)));
+        if(chmod(certPath.c_str(), S_IRUSR | S_IWUSR) == -1) Gd::out.printWarning("Warning: Could net set permissions on " + certPath + ": " + std::string(strerror(errno)));;
 
-        GD::out.printMessage("Remote configuration was successful.");
+        Gd::out.printMessage("Remote configuration was successful.");
 
         return std::make_shared<BaseLib::Variable>();
     }
     catch(BaseLib::Security::GcryptException& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, "Error decrypting data: " + std::string(ex.what()));
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, "Error decrypting data: " + std::string(ex.what()));
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
 }
@@ -271,13 +273,13 @@ void RpcServer::newConnection(int32_t clientId, std::string address, uint16_t po
 {
     try
     {
-        GD::out.printInfo("Info: New connection from " + address + " on port " + std::to_string(port) + ".");
+        Gd::out.printInfo("Info: New connection from " + address + " on port " + std::to_string(port) + ".");
         _clientId = clientId;
         _clientConnected = true;
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -303,7 +305,7 @@ void RpcServer::packetReceived(int32_t clientId, BaseLib::TcpSocket::TcpPacket p
                         {
                             response = configure(parameters);
 
-                            if(!response->errorStruct) GD::upnp->stop();
+                            if(!response->errorStruct) Gd::upnp->stop();
 
                             std::vector<uint8_t> data;
                             _rpcEncoder->encodeResponse(response, data);
@@ -346,11 +348,11 @@ void RpcServer::packetReceived(int32_t clientId, BaseLib::TcpSocket::TcpPacket p
     catch(BaseLib::Rpc::BinaryRpcException& ex)
     {
         _binaryRpc->reset();
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, "Error processing packet: " + std::string(ex.what()));
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, "Error processing packet: " + std::string(ex.what()));
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -383,7 +385,7 @@ BaseLib::PVariable RpcServer::invoke(std::string methodName, BaseLib::PArray& pa
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
 }
@@ -398,6 +400,6 @@ void RpcServer::txTest()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }

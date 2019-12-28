@@ -30,7 +30,7 @@
 
 #include "HomeMaticCc1101.h"
 #ifdef SPISUPPORT
-#include "../GD.h"
+#include "../Gd.h"
 
 HomeMaticCc1101::HomeMaticCc1101(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl)
 {
@@ -44,19 +44,19 @@ HomeMaticCc1101::HomeMaticCc1101(BaseLib::SharedObjects* bl) : ICommunicationInt
         _sendingPending = false;
         _firstPacket = true;
         _updateMode = false;
-        _gpio.reset(new BaseLib::LowLevel::Gpio(bl, GD::settings.gpioPath()));
+        _gpio.reset(new BaseLib::LowLevel::Gpio(bl, Gd::settings.gpioPath()));
 
         _localRpcMethods.emplace("sendPacket", std::bind(&HomeMaticCc1101::sendPacket, this, std::placeholders::_1));
         _localRpcMethods.emplace("enableUpdateMode", std::bind(&HomeMaticCc1101::enableUpdateMode, this, std::placeholders::_1));
         _localRpcMethods.emplace("disableUpdateMode", std::bind(&HomeMaticCc1101::disableUpdateMode, this, std::placeholders::_1));
 
-        _oscillatorFrequency = GD::settings.oscillatorFrequency();
-        _interruptPin = GD::settings.interruptPin();
+        _oscillatorFrequency = Gd::settings.oscillatorFrequency();
+        _interruptPin = Gd::settings.interruptPin();
 
         if(_oscillatorFrequency < 0) _oscillatorFrequency = 26000000;
         if(_interruptPin != 0 && _interruptPin != 2)
         {
-            if(_interruptPin > 0) GD::out.printWarning("Warning: Setting for interruptPin in gateway.conf is invalid.");
+            if(_interruptPin > 0) Gd::out.printWarning("Warning: Setting for interruptPin in gateway.conf is invalid.");
             _interruptPin = 2;
         }
 
@@ -68,7 +68,7 @@ HomeMaticCc1101::HomeMaticCc1101(BaseLib::SharedObjects* bl) : ICommunicationInt
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -80,7 +80,7 @@ HomeMaticCc1101::~HomeMaticCc1101()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -88,9 +88,9 @@ void HomeMaticCc1101::start()
 {
     try
     {
-        if(GD::settings.device().empty())
+        if(Gd::settings.device().empty())
         {
-            GD::out.printError("Error: No device defined for family HomeMatic BidCoS CC1101. Please specify it in \"gateway.conf\".");
+            Gd::out.printError("Error: No device defined for family HomeMatic BidCoS CC1101. Please specify it in \"gateway.conf\".");
             return;
         }
 
@@ -99,11 +99,11 @@ void HomeMaticCc1101::start()
         _stopped = false;
         _firstPacket = true;
         _stopCallbackThread = false;
-        GD::bl->threadManager.start(_listenThread, true, 45, SCHED_FIFO, &HomeMaticCc1101::mainThread, this);
+        Gd::bl->threadManager.start(_listenThread, true, 45, SCHED_FIFO, &HomeMaticCc1101::mainThread, this);
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -112,15 +112,15 @@ void HomeMaticCc1101::stop()
     try
     {
         _stopCallbackThread = true;
-        GD::bl->threadManager.join(_listenThread);
+        Gd::bl->threadManager.join(_listenThread);
         _stopCallbackThread = false;
         if(_fileDescriptor->descriptor != -1) closeDevice();
-        _gpio->closeDevice(GD::settings.gpio1());
+        _gpio->closeDevice(Gd::settings.gpio1());
         _stopped = true;
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -141,9 +141,9 @@ void HomeMaticCc1101::mainThread()
                     std::this_thread::sleep_for(std::chrono::milliseconds(200));
                     continue;
                 }
-                if(!_stopCallbackThread && (_fileDescriptor->descriptor == -1 || !_gpio->isOpen(GD::settings.gpio1())))
+                if(!_stopCallbackThread && (_fileDescriptor->descriptor == -1 || !_gpio->isOpen(Gd::settings.gpio1())))
                 {
-                    GD::out.printError("Connection to TI CC1101 closed unexpectedly... Trying to reconnect...");
+                    Gd::out.printError("Connection to TI CC1101 closed unexpectedly... Trying to reconnect...");
                     _stopped = true; //Set to true, so that sendPacket aborts
                     if(_sending)
                     {
@@ -152,14 +152,14 @@ void HomeMaticCc1101::mainThread()
                     }
                     _txMutex.unlock(); //Make sure _txMutex is unlocked
 
-                    _gpio->closeDevice(GD::settings.gpio1());
+                    _gpio->closeDevice(Gd::settings.gpio1());
                     initDevice();
                     _stopped = false;
                     continue;
                 }
 
                 pollfd pollstruct {
-                        (int)_gpio->getFileDescriptor(GD::settings.gpio1())->descriptor,
+                        (int)_gpio->getFileDescriptor(Gd::settings.gpio1())->descriptor,
                         (short)(POLLPRI | POLLERR),
                         (short)0
                 };
@@ -174,8 +174,8 @@ void HomeMaticCc1101::mainThread()
                 }*/
                 if(pollResult > 0)
                 {
-                    if(lseek(_gpio->getFileDescriptor(GD::settings.gpio1())->descriptor, 0, SEEK_SET) == -1) throw BaseLib::Exception("Could not poll gpio: " + std::string(strerror(errno)));
-                    bytesRead = read(_gpio->getFileDescriptor(GD::settings.gpio1())->descriptor, &readBuffer[0], 1);
+                    if(lseek(_gpio->getFileDescriptor(Gd::settings.gpio1())->descriptor, 0, SEEK_SET) == -1) throw BaseLib::Exception("Could not poll gpio: " + std::string(strerror(errno)));
+                    bytesRead = read(_gpio->getFileDescriptor(Gd::settings.gpio1())->descriptor, &readBuffer[0], 1);
                     if(!bytesRead) continue;
                     if(readBuffer.at(0) == 0x30)
                     {
@@ -200,7 +200,7 @@ void HomeMaticCc1101::mainThread()
                             {
                                 if(!_firstPacket)
                                 {
-                                    GD::out.printWarning("Warning: Too large packet received: " + BaseLib::HelperFunctions::getHexString(encodedData));
+                                    Gd::out.printWarning("Warning: Too large packet received: " + BaseLib::HelperFunctions::getHexString(encodedData));
                                     closeDevice();
                                     _txMutex.unlock();
                                     continue;
@@ -220,9 +220,9 @@ void HomeMaticCc1101::mainThread()
 
                                 packet = BaseLib::HelperFunctions::getHexString(decodedData);
                             }
-                            else GD::out.printWarning("Warning: Too small packet received: " + BaseLib::HelperFunctions::getHexString(encodedData));
+                            else Gd::out.printWarning("Warning: Too small packet received: " + BaseLib::HelperFunctions::getHexString(encodedData));
                         }
-                        else GD::out.printDebug("Debug: BidCoS packet received, but CRC failed.");
+                        else Gd::out.printDebug("Debug: BidCoS packet received, but CRC failed.");
                         if(!_sendingPending)
                         {
                             sendCommandStrobe(CommandStrobes::Enum::SFRX);
@@ -244,7 +244,7 @@ void HomeMaticCc1101::mainThread()
                                     auto result = _invoke("packetReceived", parameters);
                                     if(result->errorStruct && result->structValue->at("faultCode")->integerValue != -1)
                                     {
-                                        GD::out.printError("Error calling packetReceived(): " + result->structValue->at("faultString")->stringValue);
+                                        Gd::out.printError("Error calling packetReceived(): " + result->structValue->at("faultString")->stringValue);
                                     }
                                 }
                             }
@@ -254,23 +254,23 @@ void HomeMaticCc1101::mainThread()
                 else if(pollResult < 0)
                 {
                     _txMutex.unlock();
-                    GD::out.printError("Error: Could not poll gpio: " + std::string(strerror(errno)) + ". Reopening...");
-                    _gpio->closeDevice(GD::settings.gpio1());
+                    Gd::out.printError("Error: Could not poll gpio: " + std::string(strerror(errno)) + ". Reopening...");
+                    _gpio->closeDevice(Gd::settings.gpio1());
                     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-                    _gpio->openDevice(GD::settings.gpio1(), true);
+                    _gpio->openDevice(Gd::settings.gpio1(), true);
                 }
                 //pollResult == 0 is timeout
             }
             catch(const std::exception& ex)
             {
                 _txMutex.unlock();
-                GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+                Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
             }
         }
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     _txMutex.unlock();
 }
@@ -283,26 +283,26 @@ void HomeMaticCc1101::initDevice()
         if(!_fileDescriptor || _fileDescriptor->descriptor == -1) return;
 
         initChip();
-        GD::out.printDebug("Debug: CC1100: Setting GPIO direction");
-        int32_t gpioIndex = GD::settings.gpio1();
+        Gd::out.printDebug("Debug: CC1100: Setting GPIO direction");
+        int32_t gpioIndex = Gd::settings.gpio1();
         if(gpioIndex == -1)
         {
-            GD::out.printError("Error: GPIO 1 is not defined in settings.");
+            Gd::out.printError("Error: GPIO 1 is not defined in settings.");
             return;
         }
         _gpio->setDirection(gpioIndex, BaseLib::LowLevel::Gpio::GpioDirection::Enum::IN);
-        GD::out.printDebug("Debug: CC1100: Setting GPIO edge");
+        Gd::out.printDebug("Debug: CC1100: Setting GPIO edge");
         _gpio->setEdge(gpioIndex, BaseLib::LowLevel::Gpio::GpioEdge::Enum::BOTH);
         _gpio->openDevice(gpioIndex, true);
         if(!_gpio->isOpen(gpioIndex))
         {
-            GD::out.printError("Error: Couldn't listen to rf device, because the GPIO descriptor is not valid: " + GD::settings.device());
+            Gd::out.printError("Error: Couldn't listen to rf device, because the GPIO descriptor is not valid: " + Gd::settings.device());
             return;
         }
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -312,13 +312,13 @@ void HomeMaticCc1101::openDevice()
     {
         if(_fileDescriptor && _fileDescriptor->descriptor != -1) closeDevice();
 
-        _lockfile = GD::bl->settings.lockFilePath() + "LCK.." + GD::settings.device().substr(GD::settings.device().find_last_of('/') + 1);
+        _lockfile = Gd::bl->settings.lockFilePath() + "LCK.." + Gd::settings.device().substr(Gd::settings.device().find_last_of('/') + 1);
         int lockfileDescriptor = open(_lockfile.c_str(), O_WRONLY | O_EXCL | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
         if(lockfileDescriptor == -1)
         {
             if(errno != EEXIST)
             {
-                GD::out.printCritical("Couldn't create lockfile " + _lockfile + ": " + strerror(errno));
+                Gd::out.printCritical("Couldn't create lockfile " + _lockfile + ": " + strerror(errno));
                 return;
             }
 
@@ -327,26 +327,26 @@ void HomeMaticCc1101::openDevice()
             lockfileStream >> processID;
             if(getpid() != processID && kill(processID, 0) == 0)
             {
-                GD::out.printCritical("Rf device is in use: " + GD::settings.device());
+                Gd::out.printCritical("Rf device is in use: " + Gd::settings.device());
                 return;
             }
             unlink(_lockfile.c_str());
             lockfileDescriptor = open(_lockfile.c_str(), O_WRONLY | O_EXCL | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
             if(lockfileDescriptor == -1)
             {
-                GD::out.printCritical("Couldn't create lockfile " + _lockfile + ": " + strerror(errno));
+                Gd::out.printCritical("Couldn't create lockfile " + _lockfile + ": " + strerror(errno));
                 return;
             }
         }
         dprintf(lockfileDescriptor, "%10i", getpid());
         close(lockfileDescriptor);
 
-        _fileDescriptor = _bl->fileDescriptorManager.add(open(GD::settings.device().c_str(), O_RDWR | O_NONBLOCK));
+        _fileDescriptor = _bl->fileDescriptorManager.add(open(Gd::settings.device().c_str(), O_RDWR | O_NONBLOCK));
         usleep(1000);
 
         if(_fileDescriptor->descriptor == -1)
         {
-            GD::out.printCritical("Couldn't open rf device \"" + GD::settings.device() + "\": " + strerror(errno));
+            Gd::out.printCritical("Couldn't open rf device \"" + Gd::settings.device() + "\": " + strerror(errno));
             return;
         }
 
@@ -354,7 +354,7 @@ void HomeMaticCc1101::openDevice()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -367,7 +367,7 @@ void HomeMaticCc1101::closeDevice()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -381,18 +381,18 @@ void HomeMaticCc1101::setupDevice()
         uint8_t bits = 8;
         uint32_t speed = 4000000; //4MHz, see page 25 in datasheet
 
-        if(ioctl(_fileDescriptor->descriptor, SPI_IOC_WR_MODE, &mode)) throw(BaseLib::Exception("Couldn't set spi mode on device " + GD::settings.device()));
-        if(ioctl(_fileDescriptor->descriptor, SPI_IOC_RD_MODE, &mode)) throw(BaseLib::Exception("Couldn't get spi mode off device " + GD::settings.device()));
+        if(ioctl(_fileDescriptor->descriptor, SPI_IOC_WR_MODE, &mode)) throw(BaseLib::Exception("Couldn't set spi mode on device " + Gd::settings.device()));
+        if(ioctl(_fileDescriptor->descriptor, SPI_IOC_RD_MODE, &mode)) throw(BaseLib::Exception("Couldn't get spi mode off device " + Gd::settings.device()));
 
-        if(ioctl(_fileDescriptor->descriptor, SPI_IOC_WR_BITS_PER_WORD, &bits)) throw(BaseLib::Exception("Couldn't set bits per word on device " + GD::settings.device()));
-        if(ioctl(_fileDescriptor->descriptor, SPI_IOC_RD_BITS_PER_WORD, &bits)) throw(BaseLib::Exception("Couldn't get bits per word off device " + GD::settings.device()));
+        if(ioctl(_fileDescriptor->descriptor, SPI_IOC_WR_BITS_PER_WORD, &bits)) throw(BaseLib::Exception("Couldn't set bits per word on device " + Gd::settings.device()));
+        if(ioctl(_fileDescriptor->descriptor, SPI_IOC_RD_BITS_PER_WORD, &bits)) throw(BaseLib::Exception("Couldn't get bits per word off device " + Gd::settings.device()));
 
-        if(ioctl(_fileDescriptor->descriptor, SPI_IOC_WR_MAX_SPEED_HZ, &speed)) throw(BaseLib::Exception("Couldn't set speed on device " + GD::settings.device()));
-        if(ioctl(_fileDescriptor->descriptor, SPI_IOC_RD_MAX_SPEED_HZ, &speed)) throw(BaseLib::Exception("Couldn't get speed off device " + GD::settings.device()));
+        if(ioctl(_fileDescriptor->descriptor, SPI_IOC_WR_MAX_SPEED_HZ, &speed)) throw(BaseLib::Exception("Couldn't set speed on device " + Gd::settings.device()));
+        if(ioctl(_fileDescriptor->descriptor, SPI_IOC_RD_MAX_SPEED_HZ, &speed)) throw(BaseLib::Exception("Couldn't get speed off device " + Gd::settings.device()));
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -402,7 +402,7 @@ void HomeMaticCc1101::initChip()
     {
         if(_fileDescriptor->descriptor == -1)
         {
-            GD::out.printError("Error: Could not initialize TI CC1101. The spi device's file descriptor is not valid.");
+            Gd::out.printError("Error: Could not initialize TI CC1101. The spi device's file descriptor is not valid.");
             return;
         }
         reset();
@@ -444,7 +444,7 @@ void HomeMaticCc1101::initChip()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -459,7 +459,7 @@ void HomeMaticCc1101::reset()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -474,7 +474,7 @@ void HomeMaticCc1101::enableRX(bool flushRXFIFO)
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -489,7 +489,7 @@ void HomeMaticCc1101::endSending()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -503,7 +503,7 @@ bool HomeMaticCc1101::crcOK()
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return false;
 }
@@ -516,17 +516,17 @@ void HomeMaticCc1101::readwrite(std::vector<uint8_t>& data)
         _transfer.tx_buf = (uint64_t)&data[0];
         _transfer.rx_buf = (uint64_t)&data[0];
         _transfer.len = (uint32_t)data.size();
-        if(_bl->debugLevel >= 6) GD::out.printDebug("Debug: Sending: " + _bl->hf.getHexString(data));
+        if(_bl->debugLevel >= 6) Gd::out.printDebug("Debug: Sending: " + _bl->hf.getHexString(data));
         if(!ioctl(_fileDescriptor->descriptor, SPI_IOC_MESSAGE(1), &_transfer))
         {
-            GD::out.printError("Couldn't write to device " + GD::settings.device() + ": " + std::string(strerror(errno)));
+            Gd::out.printError("Couldn't write to device " + Gd::settings.device() + ": " + std::string(strerror(errno)));
             return;
         }
-        if(_bl->debugLevel >= 6) GD::out.printDebug("Debug: Received: " + _bl->hf.getHexString(data));
+        if(_bl->debugLevel >= 6) Gd::out.printDebug("Debug: Received: " + _bl->hf.getHexString(data));
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -534,13 +534,13 @@ bool HomeMaticCc1101::checkStatus(uint8_t statusByte, Status::Enum status)
 {
     try
     {
-        if(_fileDescriptor->descriptor == -1 || !_gpio->isOpen(GD::settings.gpio1())) return false;
+        if(_fileDescriptor->descriptor == -1 || !_gpio->isOpen(Gd::settings.gpio1())) return false;
         if((statusByte & (StatusBitmasks::Enum::CHIP_RDYn | StatusBitmasks::Enum::STATE)) != status) return false;
         return true;
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return false;
 }
@@ -563,7 +563,7 @@ uint8_t HomeMaticCc1101::readRegister(Registers::Enum registerAddress)
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return 0;
 }
@@ -588,7 +588,7 @@ std::vector<uint8_t> HomeMaticCc1101::readRegisters(Registers::Enum startAddress
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return std::vector<uint8_t>();
 }
@@ -609,7 +609,7 @@ uint8_t HomeMaticCc1101::writeRegister(Registers::Enum registerAddress, uint8_t 
             readwrite(data);
             if(data.at(1) != value)
             {
-                GD::out.printError("Error (check) writing to register " + std::to_string(registerAddress) + ".");
+                Gd::out.printError("Error (check) writing to register " + std::to_string(registerAddress) + ".");
                 return 0;
             }
         }
@@ -617,7 +617,7 @@ uint8_t HomeMaticCc1101::writeRegister(Registers::Enum registerAddress, uint8_t 
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return 0;
 }
@@ -630,11 +630,11 @@ void HomeMaticCc1101::writeRegisters(Registers::Enum startAddress, std::vector<u
         std::vector<uint8_t> data({(uint8_t)(startAddress | RegisterBitmasks::Enum::WRITE_BURST) });
         data.insert(data.end(), values.begin(), values.end());
         readwrite(data);
-        if((data.at(0) & StatusBitmasks::Enum::CHIP_RDYn)) GD::out.printError("Error writing to registers " + std::to_string(startAddress) + ".");
+        if((data.at(0) & StatusBitmasks::Enum::CHIP_RDYn)) Gd::out.printError("Error writing to registers " + std::to_string(startAddress) + ".");
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 }
 
@@ -655,7 +655,7 @@ uint8_t HomeMaticCc1101::sendCommandStrobe(CommandStrobes::Enum commandStrobe)
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return 0;
 }
@@ -667,13 +667,13 @@ BaseLib::PVariable HomeMaticCc1101::callMethod(std::string& method, BaseLib::PAr
         auto localMethodIterator = _localRpcMethods.find(method);
         if(localMethodIterator == _localRpcMethods.end()) return BaseLib::Variable::createError(-32601, ": Requested method not found.");
 
-        if(GD::bl->debugLevel >= 5) GD::out.printDebug("Debug: Server is calling RPC method: " + method);
+        if(Gd::bl->debugLevel >= 5) Gd::out.printDebug("Debug: Server is calling RPC method: " + method);
 
         return localMethodIterator->second(parameters);
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
 }
@@ -685,7 +685,7 @@ BaseLib::PVariable HomeMaticCc1101::sendPacket(BaseLib::PArray& parameters)
     {
         if(parameters->size() != 2 || parameters->at(1)->type != BaseLib::VariableType::tString || parameters->at(1)->stringValue.empty()) return BaseLib::Variable::createError(-1, "Invalid parameters.");
 
-        if(!_fileDescriptor || _fileDescriptor->descriptor == -1 || !_gpio->isOpen(GD::settings.gpio1()) || _stopped) return BaseLib::Variable::createError(-1, "SPI device or GPIO is not open.");
+        if(!_fileDescriptor || _fileDescriptor->descriptor == -1 || !_gpio->isOpen(Gd::settings.gpio1()) || _stopped) return BaseLib::Variable::createError(-1, "SPI device or GPIO is not open.");
 
         std::vector<uint8_t> decodedPacket = _bl->hf.getUBinary(parameters->at(1)->stringValue);
         bool burst = decodedPacket.at(2) & 0x10;
@@ -703,7 +703,7 @@ BaseLib::PVariable HomeMaticCc1101::sendPacket(BaseLib::PArray& parameters)
         _sendingPending = true;
         if(!_txMutex.try_lock_for(std::chrono::milliseconds(10000)))
         {
-            GD::out.printCritical("Critical: Could not acquire lock for sending packet. This should never happen. Please report this error.");
+            Gd::out.printCritical("Critical: Could not acquire lock for sending packet. This should never happen. Please report this error.");
             _txMutex.unlock();
             if(!_txMutex.try_lock_for(std::chrono::milliseconds(100)))
             {
@@ -712,7 +712,7 @@ BaseLib::PVariable HomeMaticCc1101::sendPacket(BaseLib::PArray& parameters)
             }
         }
         _sendingPending = false;
-        if(_stopCallbackThread || _fileDescriptor->descriptor == -1 || !_gpio->isOpen(GD::settings.gpio1()) || _stopped)
+        if(_stopCallbackThread || _fileDescriptor->descriptor == -1 || !_gpio->isOpen(Gd::settings.gpio1()) || _stopped)
         {
             _txMutex.unlock();
             return BaseLib::Variable::createError(-1, "SPI device or GPIO is not open.");
@@ -722,7 +722,7 @@ BaseLib::PVariable HomeMaticCc1101::sendPacket(BaseLib::PArray& parameters)
         sendCommandStrobe(CommandStrobes::Enum::SFTX);
         if(BaseLib::HelperFunctions::getTime() - timeBeforeLock > 100)
         {
-            GD::out.printWarning("Warning: Timing problem. Sending took more than 100ms. Do you have enough system resources?");
+            Gd::out.printWarning("Warning: Timing problem. Sending took more than 100ms. Do you have enough system resources?");
         }
         if(burst)
         {
@@ -761,7 +761,7 @@ BaseLib::PVariable HomeMaticCc1101::sendPacket(BaseLib::PArray& parameters)
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
 }
@@ -864,7 +864,7 @@ void HomeMaticCc1101::setConfig()
 			0x00, //28: RCCTRL0
 		};
 	}
-	else GD::out.printError("Error: Unknown value for \"oscillatorFrequency\" in gateway.conf. Valid values are 26000000 and 27000000.");
+	else Gd::out.printError("Error: Unknown value for \"oscillatorFrequency\" in gateway.conf. Valid values are 26000000 and 27000000.");
 }
 
 BaseLib::PVariable HomeMaticCc1101::enableUpdateMode(BaseLib::PArray& parameters)
@@ -896,7 +896,7 @@ BaseLib::PVariable HomeMaticCc1101::enableUpdateMode(BaseLib::PArray& parameters
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
 
     _txMutex.unlock();
@@ -917,7 +917,7 @@ BaseLib::PVariable HomeMaticCc1101::disableUpdateMode(BaseLib::PArray& parameter
     }
     catch(const std::exception& ex)
     {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+        Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
     return BaseLib::Variable::createError(-32500, "Unknown application error. See log for more details.");
 }
