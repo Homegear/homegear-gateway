@@ -160,6 +160,7 @@ void Zigbee::listen()
         int32_t result = 0;
         uint32_t packetSize = 0;
         uint8_t crc8 = 0;
+        int errorReadCount = 0;
 
         //if (IsOpen()) sendReconnect();
 
@@ -209,9 +210,19 @@ void Zigbee::listen()
                 if(-1 == result)
                 {
                     Gd::out.printError("Error reading from serial device.");
-                    SetStopped();
-                    packetSize = 0;
-                    data.clear();
+
+                    if (++errorReadCount > 5)
+                    {
+                        Gd::out.printError("Couldn't recover from errors reading from serial device, closing it for reopen...");
+
+                        SetStopped();
+                        errorReadCount = 0;
+                        packetSize = 0;
+                        data.clear();
+                    }
+                    else
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
                     continue;
                 }
                 else if(1 == result)
@@ -229,6 +240,8 @@ void Zigbee::listen()
 
                     continue;
                 }
+
+                errorReadCount = 0;
 
                 if(data.empty())
                 {
