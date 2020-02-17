@@ -31,7 +31,7 @@
 #ifndef HOMEGEAR_GATEWAY_HOMEMATIC_CC1101_H
 #define HOMEGEAR_GATEWAY_HOMEMATIC_CC1101_H
 
-#ifdef SPISUPPORT
+#ifndef SPISUPPORT
 
 #include "ICommunicationInterface.h"
 
