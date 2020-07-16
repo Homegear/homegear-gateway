@@ -138,7 +138,7 @@ void EnOcean::getResponse(uint8_t packetType, std::vector<uint8_t>& requestPacke
             Gd::out.printInfo("Info: Sending packet " + BaseLib::HelperFunctions::getHexString(requestPacket));
             rawSend(requestPacket);
         }
-        catch(BaseLib::SocketOperationException ex)
+        catch(const BaseLib::SocketOperationException& ex)
         {
             Gd::out.printError("Error sending packet: " + std::string(ex.what()));
             return;
