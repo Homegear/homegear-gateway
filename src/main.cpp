@@ -34,7 +34,9 @@
 
 #include <malloc.h>
 #include <sys/prctl.h> //For function prctl
+#ifdef BSDSYSTEM
 #include <sys/sysctl.h> //For BSD systems
+#endif
 #include <sys/resource.h> //getrlimit, setrlimit
 #include <sys/file.h> //flock
 #include <sys/types.h>

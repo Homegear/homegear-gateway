@@ -118,10 +118,10 @@ void UPnP::listen()
 		_lastAdvertisement = BaseLib::HelperFunctions::getTimeSeconds();
 		char buffer[1024];
 		int32_t bytesReceived = 0;
-		struct sockaddr_in si_other;
+		struct sockaddr_in si_other{};
 		socklen_t slen = sizeof(si_other);
 		fd_set readFileDescriptor;
-		timeval timeout;
+		timeval timeout{};
 		int32_t nfds = 0;
 		BaseLib::Http http;
 		while(!_stopServer)
@@ -156,7 +156,7 @@ void UPnP::listen()
 					FD_SET(_serverSocketDescriptor->descriptor, &readFileDescriptor);
 				}
 
-				bytesReceived = select(nfds, &readFileDescriptor, NULL, NULL, &timeout);
+				bytesReceived = select(nfds, &readFileDescriptor, nullptr, nullptr, &timeout);
 				if(bytesReceived == 0)
 				{
 					if(BaseLib::HelperFunctions::getTimeSeconds() - _lastAdvertisement >= 60) sendNotify();
@@ -262,7 +262,7 @@ void UPnP::sendOK(std::string destinationIpAddress, int32_t destinationPort, boo
 	try
 	{
 		if(!_serverSocketDescriptor || _serverSocketDescriptor->descriptor == -1) return;
-		struct sockaddr_in addessInfo;
+		struct sockaddr_in addessInfo{};
 		addessInfo.sin_family = AF_INET;
 		addessInfo.sin_addr.s_addr = inet_addr(destinationIpAddress.c_str());
 		addessInfo.sin_port = htons(destinationPort);
@@ -295,7 +295,7 @@ void UPnP::sendNotify()
 	try
 	{
 		if(!_serverSocketDescriptor || _serverSocketDescriptor->descriptor == -1) return;
-		struct sockaddr_in addessInfo;
+		struct sockaddr_in addessInfo{};
 		addessInfo.sin_family = AF_INET;
 		addessInfo.sin_addr.s_addr = inet_addr("239.255.255.250");
 		addessInfo.sin_port = htons(1900);
@@ -327,7 +327,7 @@ void UPnP::sendByebye()
 	try
 	{
 		if(!_serverSocketDescriptor || _serverSocketDescriptor->descriptor == -1) return;
-		struct sockaddr_in addessInfo;
+		struct sockaddr_in addessInfo{};
 		addessInfo.sin_family = AF_INET;
 		addessInfo.sin_addr.s_addr = inet_addr("239.255.255.250");
 		addessInfo.sin_port = htons(1900);
@@ -392,14 +392,14 @@ std::shared_ptr<BaseLib::FileDescriptor> UPnP::getSocketDescriptor()
 			Gd::out.printWarning("Warning: Could not set socket options in UPnP server: " + std::string(strerror(errno)));
 		}
 
-		struct in_addr localInterface;
+		struct in_addr localInterface{};
 		localInterface.s_addr = inet_addr(_address.c_str());
 		if(setsockopt(serverSocketDescriptor->descriptor, IPPROTO_IP, IP_MULTICAST_IF, (char *)&localInterface, sizeof(localInterface)) == -1)
 		{
 			Gd::out.printWarning("Warning: Could not set socket options in UPnP server: " + std::string(strerror(errno)));
 		}
 
-		struct sockaddr_in localSock;
+		struct sockaddr_in localSock{};
 		memset((char *) &localSock, 0, sizeof(localSock));
 		localSock.sin_family = AF_INET;
 		localSock.sin_port = htons(1900);
@@ -412,7 +412,7 @@ std::shared_ptr<BaseLib::FileDescriptor> UPnP::getSocketDescriptor()
 			return std::shared_ptr<BaseLib::FileDescriptor>();
 		}
 
-		struct ip_mreq group;
+		struct ip_mreq group{};
 		group.imr_multiaddr.s_addr = inet_addr("239.255.255.250");
 		group.imr_interface.s_addr = inet_addr(_address.c_str());
 		if(setsockopt(serverSocketDescriptor->descriptor, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&group, sizeof(group)) == -1)

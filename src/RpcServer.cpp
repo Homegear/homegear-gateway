@@ -83,13 +83,13 @@ bool RpcServer::start()
 
         if(Gd::settings.family() == "enocean") _interface = std::unique_ptr<EnOcean>(new EnOcean(_bl));
         else if(Gd::settings.family() == "homematicculfw") _interface = std::unique_ptr<HomeMaticCulfw>(new HomeMaticCulfw(_bl));
-        else if(Gd::settings.family() == "maxculfw") _interface = std::unique_ptr<HomeMaticCulfw>(new HomeMaticCulfw(_bl));
+        else if(Gd::settings.family() == "maxculfw") _interface = std::unique_ptr<MaxCulfw>(new MaxCulfw(_bl));
         else if(Gd::settings.family() == "zwave") _interface = std::unique_ptr<ZWave>(new ZWave(_bl));
         else if(Gd::settings.family() == "zigbee") _interface = std::unique_ptr<Zigbee>(new Zigbee(_bl));
 #ifdef SPISUPPORT
         else if(Gd::settings.family() == "cc110ltest") _interface = std::unique_ptr<Cc110LTest>(new Cc110LTest(_bl));
         else if(Gd::settings.family() == "homematiccc1101") _interface = std::unique_ptr<HomeMaticCc1101>(new HomeMaticCc1101(_bl));
-        else if(Gd::settings.family() == "maxcc1101") _interface = std::unique_ptr<HomeMaticCc1101>(new HomeMaticCc1101(_bl));
+        else if(Gd::settings.family() == "maxcc1101") _interface = std::unique_ptr<MaxCc1101>(new MaxCc1101(_bl));
 #endif
 
         if(!_interface)
