@@ -28,8 +28,8 @@ set(SOURCE_FILES
         src/Families/MaxCulfw.h
         src/Families/ZWave.cpp
         src/Families/ZWave.h
-	src/Families/Zigbee.cpp
-	src/Families/Zigbee.h
+		src/Families/Zigbee.cpp
+		src/Families/Zigbee.h
         src/UPnP.cpp
         src/UPnP.h)
 
