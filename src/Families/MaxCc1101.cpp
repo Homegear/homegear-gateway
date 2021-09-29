@@ -667,7 +667,7 @@ BaseLib::PVariable MaxCc1101::sendPacket(BaseLib::PArray& parameters)
 {
     try
     {
-        if(parameters->size() != 2 || parameters->at(1)->type != BaseLib::VariableType::tString || parameters->at(1)->stringValue.empty() || parameters->at(2)->type != BaseLib::VariableType::tBoolean) return BaseLib::Variable::createError(-1, "Invalid parameters.");
+        if(parameters->size() != 3 || parameters->at(1)->type != BaseLib::VariableType::tString || parameters->at(1)->stringValue.empty() || parameters->at(2)->type != BaseLib::VariableType::tBoolean) return BaseLib::Variable::createError(-1, "Invalid parameters.");
 
         if(!_fileDescriptor || _fileDescriptor->descriptor == -1 || !_gpio->isOpen(Gd::settings.gpio1()) || _stopped) return BaseLib::Variable::createError(-1, "SPI device or GPIO is not open.");
 
