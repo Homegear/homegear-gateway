@@ -53,7 +53,7 @@ public:
 private:
 	BaseLib::SharedObjects* _bl = nullptr;
 
-	std::shared_ptr<BaseLib::TcpSocket> _tcpServer;
+	std::shared_ptr<C1Net::TcpServer> _tcpServer;
 	std::unique_ptr<BaseLib::Rpc::BinaryRpc> _binaryRpc;
     std::unique_ptr<BaseLib::Rpc::RpcEncoder> _rpcEncoder;
     std::unique_ptr<BaseLib::Rpc::RpcDecoder> _rpcDecoder;
@@ -78,8 +78,9 @@ private:
 
 	void restart();
 
-	void newConnection(int32_t clientId, std::string address, uint16_t port);
-	void packetReceived(int32_t clientId, BaseLib::TcpSocket::TcpPacket packet);
+    void log(uint32_t log_level, const std::string &message);
+	void newConnection(const C1Net::TcpServer::PTcpClientData &client_data);
+	void packetReceived(const C1Net::TcpServer::PTcpClientData &client_data, const C1Net::TcpPacket &packet);
 };
 
 #endif
