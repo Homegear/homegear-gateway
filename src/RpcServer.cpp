@@ -141,7 +141,7 @@ bool RpcServer::start() {
     serverInfo.new_connection_callback = std::bind(&RpcServer::newConnection, this, std::placeholders::_1);
     serverInfo.packet_received_callback = std::bind(&RpcServer::packetReceived, this, std::placeholders::_1, std::placeholders::_2);
 
-    _tcpServer = std::make_shared<C1Net::TcpServer>(_bl, serverInfo);
+    _tcpServer = std::make_shared<C1Net::TcpServer>(serverInfo);
     _tcpServer->Start();
     _stopped = false;
 
