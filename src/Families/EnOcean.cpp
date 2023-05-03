@@ -145,13 +145,13 @@ void EnOcean::addCrc8(std::vector<uint8_t> &packet) {
 
     uint8_t crc8 = 0;
     for (int32_t i = 1; i < 5; i++) {
-      crc8 = _crc8Table[crc8 ^ (uint8_t)packet[i]];
+      crc8 = _crc8Table[crc8 ^ (uint8_t) packet[i]];
     }
     packet[5] = crc8;
 
     crc8 = 0;
     for (uint32_t i = 6; i < packet.size() - 1; i++) {
-      crc8 = _crc8Table[crc8 ^ (uint8_t)packet[i]];
+      crc8 = _crc8Table[crc8 ^ (uint8_t) packet[i]];
     }
     packet.back() = crc8;
   }
@@ -192,7 +192,7 @@ void EnOcean::init() {
         _stopped = true;
         return;
       }
-      _baseAddress = ((int32_t)(uint8_t)response[7] << 24) | ((int32_t)(uint8_t)response[8] << 16) | ((int32_t)(uint8_t)response[9] << 8) | (uint8_t)response[10];
+      _baseAddress = ((int32_t) (uint8_t) response[7] << 24) | ((int32_t) (uint8_t) response[8] << 16) | ((int32_t) (uint8_t) response[9] << 8) | (uint8_t) response[10];
       break;
     }
 
@@ -216,7 +216,7 @@ void EnOcean::listen() {
 
     while (!_stopCallbackThread) {
       try {
-        if (_stopped || !_serial || !_serial->isOpen()) {
+        if (_stopped || !_serial->isOpen()) {
           if (_stopCallbackThread) return;
           if (_stopped) Gd::out.printWarning("Warning: Connection to device closed. Trying to reconnect...");
           _serial->closeDevice();
@@ -239,12 +239,12 @@ void EnOcean::listen() {
         }
 
         if (data.empty() && byte != 0x55) continue;
-        data.push_back((uint8_t)byte);
+        data.push_back((uint8_t) byte);
 
         if (size == 0 && data.size() == 6) {
           crc8 = 0;
           for (int32_t i = 1; i < 5; i++) {
-            crc8 = _crc8Table[crc8 ^ (uint8_t)data[i]];
+            crc8 = _crc8Table[crc8 ^ (uint8_t) data[i]];
           }
           if (crc8 != data[5]) {
             Gd::out.printError("Error: CRC (0x" + BaseLib::HelperFunctions::getHexString(crc8, 2) + ") failed for header: " + BaseLib::HelperFunctions::getHexString(data));
@@ -264,7 +264,7 @@ void EnOcean::listen() {
         if (size > 0 && data.size() == size) {
           crc8 = 0;
           for (uint32_t i = 6; i < data.size() - 1; i++) {
-            crc8 = _crc8Table[crc8 ^ (uint8_t)data[i]];
+            crc8 = _crc8Table[crc8 ^ (uint8_t) data[i]];
           }
           if (crc8 != data.back()) {
             Gd::out.printError("Error: CRC failed for packet: " + BaseLib::HelperFunctions::getHexString(data));
@@ -356,7 +356,9 @@ BaseLib::PVariable EnOcean::callMethod(std::string &method, BaseLib::PArray para
 //{{{ RPC methods
 BaseLib::PVariable EnOcean::sendPacket(BaseLib::PArray &parameters) {
   try {
-    if (parameters->size() != 2 || parameters->at(1)->type != BaseLib::VariableType::tBinary || parameters->at(1)->binaryValue.empty()) return BaseLib::Variable::createError(-1, "Invalid parameters.");
+    if (parameters->size() != 2 || parameters->at(1)->type != BaseLib::VariableType::tBinary || parameters->at(1)->binaryValue.empty())
+      return BaseLib::Variable::createError(-1,
+                                            "Invalid parameters.");
 
     if (!_initComplete) {
       Gd::out.printInfo("Info: Waiting one second, because init is not complete.");
@@ -408,7 +410,7 @@ BaseLib::PVariable EnOcean::setBaseAddress(BaseLib::PArray &parameters) {
       }
     }
 
-    uint32_t value = (uint32_t)(int32_t)parameters->at(1)->integerValue64;
+    uint32_t value = (uint32_t) (int32_t) parameters->at(1)->integerValue64;
 
     if ((value & 0xFF000000) != 0xFF000000) {
       Gd::out.printError("Error: Could not set base address. Address must start with 0xFF.");
@@ -419,7 +421,7 @@ BaseLib::PVariable EnOcean::setBaseAddress(BaseLib::PArray &parameters) {
 
     {
       // Set address - only possible 10 times, Must start with "0xFF"
-      std::vector<uint8_t> data{0x55, 0x00, 0x05, 0x00, 0x05, 0x00, 0x07, (uint8_t)(value >> 24), (uint8_t)((value >> 16) & 0xFF), (uint8_t)((value >> 8) & 0xFF), (uint8_t)(value & 0xFF), 0x00};
+      std::vector<uint8_t> data{0x55, 0x00, 0x05, 0x00, 0x05, 0x00, 0x07, (uint8_t) (value >> 24), (uint8_t) ((value >> 16) & 0xFF), (uint8_t) ((value >> 8) & 0xFF), (uint8_t) (value & 0xFF), 0x00};
       addCrc8(data);
       getResponse(0x02, data, response);
       if (response.size() != 8 || response[1] != 0 || response[2] != 1 || response[3] != 0 || response[4] != 2 || response[6] != 0) {
@@ -439,13 +441,13 @@ BaseLib::PVariable EnOcean::setBaseAddress(BaseLib::PArray &parameters) {
         _stopped = true;
         return BaseLib::Variable::createError(-5, "Error reading address from device: " + BaseLib::HelperFunctions::getHexString(data));
       }
-      _baseAddress = ((int32_t)(uint8_t)response[7] << 24) | ((int32_t)(uint8_t)response[8] << 16) | ((int32_t)(uint8_t)response[9] << 8) | (uint8_t)response[10];
+      _baseAddress = ((int32_t) (uint8_t) response[7] << 24) | ((int32_t) (uint8_t) response[8] << 16) | ((int32_t) (uint8_t) response[9] << 8) | (uint8_t) response[10];
       break;
     }
 
     Gd::out.printInfo("Info: Base address set to 0x" + BaseLib::HelperFunctions::getHexString(_baseAddress, 8) + ". Remaining changes: " + std::to_string(response[11]));
 
-    return std::make_shared<BaseLib::Variable>((int32_t)response[11]);
+    return std::make_shared<BaseLib::Variable>((int32_t) response[11]);
   }
   catch (const std::exception &ex) {
     Gd::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
