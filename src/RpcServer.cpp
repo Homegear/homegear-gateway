@@ -318,7 +318,7 @@ void RpcServer::packetReceived(const C1Net::TcpServer::PTcpClientData &client_da
 
 BaseLib::PVariable RpcServer::invoke(std::string methodName, BaseLib::PArray &parameters) {
   try {
-    if (_unconfigured || _tcpServer->GetClientCount() == 0) return BaseLib::Variable::createError(-1, "No client connected.");
+    if (_unconfigured || !_tcpServer || _tcpServer->GetClientCount() == 0) return BaseLib::Variable::createError(-1, "No client connected.");
     std::lock_guard<std::mutex> invokeGuard(_invokeMutex);
 
     std::unique_lock<std::mutex> requestLock(_requestMutex);
