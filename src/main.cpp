@@ -224,9 +224,9 @@ void getExecutablePath(int argc, char* argv[])
 		std::cerr << "Could not get executable path." << std::endl;
 		exit(1);
 	}
-	if((unsigned)length > sizeof(path))
+	if((unsigned)length > sizeof(path) - 1)
 	{
-		std::cerr << "The path the homegear binary is in has more than 1024 characters." << std::endl;
+		std::cerr << "The path the homegear binary is in has more than " + std::to_string(sizeof(path) - 1) + " characters." << std::endl;
 		exit(1);
 	}
 	path[length] = '\0';
