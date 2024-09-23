@@ -31,8 +31,8 @@
 #include "Cc110LTest.h"
 
 #ifdef SPISUPPORT
-
 #include "../Gd.h"
+#include <sys/poll.h>
 
 Cc110LTest::Cc110LTest(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl)
 {

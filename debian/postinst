@@ -21,8 +21,8 @@ case $1 in
 		chown homegear:homegear /var/lib/homegear-gateway
 		chmod 750 /var/lib/homegear-gateway
 
-		passwordConfigured=$(cat gateway.conf | grep -c "^configurationPassword")
-		uuidConfigured=$(cat gateway.conf | grep -c "^uPnPUDN")
+		passwordConfigured=$(cat /etc/homegear/gateway.conf | grep -c "^configurationPassword")
+		uuidConfigured=$(cat /etc/homegear/gateway.conf | grep -c "^uPnPUDN")
 
 		if [ $uuidConfigured -eq 0 ]; then
 			uuid=$(cat /proc/sys/kernel/random/uuid)

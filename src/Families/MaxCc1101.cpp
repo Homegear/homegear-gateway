@@ -31,6 +31,7 @@
 #include "MaxCc1101.h"
 #ifdef SPISUPPORT
 #include "../Gd.h"
+#include <sys/poll.h>
 
 MaxCc1101::MaxCc1101(BaseLib::SharedObjects* bl) : ICommunicationInterface(bl)
 {

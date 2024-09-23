@@ -8,6 +8,6 @@ Homepage: https://homegear.eu
 
 Package: homegear-gateway
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libhomegear-base (= <BASELIBVER>), libgcrypt20, libgnutlsxx28, libgpg-error0 (>= 1.10), procps
+Depends: ${shlibs:Depends}, ${misc:Depends}, libhomegear-base (= <BASELIBVER>), libgcrypt20, libgnutlsxx28 | libgnutlsxx30, libgpg-error0 (>= 1.10), procps
 Description: Universal communication gateway for Homegear
  Universal communication gateway for Homegear
