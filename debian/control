@@ -3,11 +3,11 @@ Maintainer: Sathya Laufer <sathya@laufers.net>
 Section: misc
 Priority: optional
 Standards-Version: 3.9.6
-Build-Depends: debhelper (>= 8), libhomegear-base (= <BASELIBVER>), libgcrypt20-dev, libgpg-error-dev (>= 1.10), libgnutls28-dev
+Build-Depends: debhelper (>= 8), libhomegear-base (= <BASELIBVER>), libgcrypt20-dev, libgpg-error-dev (>= 1.10)
 Homepage: https://homegear.eu
 
 Package: homegear-gateway
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libhomegear-base (= <BASELIBVER>), libgcrypt20, libgnutlsxx28 | libgnutlsxx30, libgpg-error0 (>= 1.10), procps
+Depends: ${shlibs:Depends}, ${misc:Depends}, libhomegear-base (= <BASELIBVER>), libgcrypt20, libgnutls30t64 | libgnutls30, libgpg-error0 (>= 1.10), procps
 Description: Universal communication gateway for Homegear
  Universal communication gateway for Homegear
