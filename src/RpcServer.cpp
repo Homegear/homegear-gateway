@@ -97,6 +97,7 @@ bool RpcServer::start() {
     serverInfo.listen_address = Gd::settings.listenAddress();
     serverInfo.port = _unconfigured ? Gd::settings.portUnconfigured() : Gd::settings.port();
     serverInfo.max_connections = 1;
+    serverInfo.min_incoming_data_interval = 86400000; // 1 day
     serverInfo.tls = true;
     auto certificateInfo = std::make_shared<C1Net::CertificateInfo>();
 
