@@ -31,6 +31,8 @@
 #ifndef GATEWAYSETTINGS_H_
 #define GATEWAYSETTINGS_H_
 
+#include <cstdint>
+
 #include <homegear-base/BaseLib.h>
 
 class Settings

@@ -31,6 +31,8 @@
 #ifndef HOMEGEAR_GATEWAY_ICOMMUNICATIONINTERFACE_H
 #define HOMEGEAR_GATEWAY_ICOMMUNICATIONINTERFACE_H
 
+#include <cstdint>
+
 #include <homegear-base/BaseLib.h>
 
 class ICommunicationInterface

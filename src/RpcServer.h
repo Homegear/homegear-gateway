@@ -31,6 +31,8 @@
 #ifndef RPCSERVER_H_
 #define RPCSERVER_H_
 
+#include <cstdint>
+
 #include <homegear-base/BaseLib.h>
 #include "Families/ICommunicationInterface.h"
 
