@@ -31,6 +31,8 @@
 #ifndef HOMEGEAR_GATEWAY_ZWAVE_H
 #define HOMEGEAR_GATEWAY_ZWAVE_H
 
+#include <cstdint>
+
 #include "ICommunicationInterface.h"
 
 

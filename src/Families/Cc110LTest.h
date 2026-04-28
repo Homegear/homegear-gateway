@@ -31,6 +31,8 @@
 #ifndef HOMEGEAR_GATEWAY_CC110L_TEST_H
 #define HOMEGEAR_GATEWAY_CC110L_TEST_H
 
+#include <cstdint>
+
 #ifdef SPISUPPORT
 
 #include "ICommunicationInterface.h"

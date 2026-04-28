@@ -31,6 +31,8 @@
 #ifndef HOMEGEAR_GATEWAY_ZIGBEE_H
 #define HOMEGEAR_GATEWAY_ZIGBEE_H
 
+#include <cstdint>
+
 #include "ICommunicationInterface.h"
 
 
