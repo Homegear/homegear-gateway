@@ -31,6 +31,8 @@
 #ifndef GD_H_
 #define GD_H_
 
+#include <cstdint>
+
 #include "Settings.h"
 
 #include <homegear-base/BaseLib.h>

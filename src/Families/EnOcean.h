@@ -31,6 +31,8 @@
 #ifndef HOMEGEAR_GATEWAY_ENOCEAN_H
 #define HOMEGEAR_GATEWAY_ENOCEAN_H
 
+#include <cstdint>
+
 #include "ICommunicationInterface.h"
 
 #define ENOCEAN_FAMILY_ID 15
