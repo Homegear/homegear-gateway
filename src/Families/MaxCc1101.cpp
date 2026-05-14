@@ -675,8 +675,18 @@ BaseLib::PVariable MaxCc1101::sendPacket(BaseLib::PArray& parameters)
 
         std::vector<uint8_t> packetBytes = _bl->hf.getUBinary(parameters->at(1)->stringValue);
 
+        int64_t timeBeforeLock = BaseLib::HelperFunctions::getTime();
         _sendingPending = true;
-        _txMutex.lock();
+        if(!_txMutex.try_lock_for(std::chrono::milliseconds(10000)))
+        {
+            Gd::out.printCritical("Critical: Could not acquire lock for sending packet. This should never happen. Please report this error.");
+            _txMutex.unlock();
+            if(!_txMutex.try_lock_for(std::chrono::milliseconds(100)))
+            {
+                _sendingPending = false;
+                return BaseLib::Variable::createError(-2, "Could not acquire lock for sending packet.");
+            }
+        }
         _sendingPending = false;
         if(_stopCallbackThread || _fileDescriptor->descriptor == -1 || !_gpio->isOpen(Gd::settings.gpio1()) || _stopped)
         {
@@ -686,6 +696,10 @@ BaseLib::PVariable MaxCc1101::sendPacket(BaseLib::PArray& parameters)
         _sending = true;
         sendCommandStrobe(CommandStrobes::Enum::SIDLE);
         sendCommandStrobe(CommandStrobes::Enum::SFTX);
+        if(BaseLib::HelperFunctions::getTime() - timeBeforeLock > 100)
+        {
+            Gd::out.printWarning("Warning: Timing problem. Sending took more than 100ms. Do you have enough system resources?");
+        }
         if(parameters->at(2)->booleanValue) //WOR packet
         {
             sendCommandStrobe(CommandStrobes::Enum::STX);
